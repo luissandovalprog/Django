@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Listado de Madres{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>Madres Registradas</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'core:madre_create' %}" class="btn btn-primary">
+            Nueva Madre
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Ficha Clínica</th>
+                        <th>Nombre</th>
+                        <th>RUT</th>
+                        <th>Fecha Nacimiento</th>
+                        <th>Previsión</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for madre in madres %}
+                    <tr>
+                        <td>{{ madre.ficha_clinica_id|default:"---" }}</td>
+                        <td>{{ madre.nombre_descifrado|default:"---" }}</td>
+                        <td>{{ madre.rut_descifrado|default:"---" }}</td>
+                        <td>{{ madre.fecha_nacimiento|date:"d/m/Y" }}</td>
+                        <td>{{ madre.prevision|default:"---" }}</td>
+                        <td>
+                            <a href="{% url 'core:madre_detail' madre.pk %}" class="btn btn-sm btn-info">Ver</a>
+                            <a href="{% url 'core:madre_update' madre.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No hay madres registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

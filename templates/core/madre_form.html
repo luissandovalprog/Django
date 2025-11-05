@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>{{ title }}</h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.rut.label }}</label>
+                    {{ form.rut }}
+                    {% if form.rut.errors %}
+                        <div class="text-danger">{{ form.rut.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.nombre.label }}</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}
+                        <div class="text-danger">{{ form.nombre.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.ficha_clinica_id.label }}</label>
+                    {{ form.ficha_clinica_id }}
+                    {% if form.ficha_clinica_id.errors %}
+                        <div class="text-danger">{{ form.ficha_clinica_id.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.telefono.label }}</label>
+                    {{ form.telefono }}
+                    {% if form.telefono.errors %}
+                        <div class="text-danger">{{ form.telefono.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.fecha_nacimiento.label }}</label>
+                    {{ form.fecha_nacimiento }}
+                    {% if form.fecha_nacimiento.errors %}
+                        <div class="text-danger">{{ form.fecha_nacimiento.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.nacionalidad.label }}</label>
+                    {{ form.nacionalidad }}
+                    {% if form.nacionalidad.errors %}
+                        <div class="text-danger">{{ form.nacionalidad.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.prevision.label }}</label>
+                    {{ form.prevision }}
+                    {% if form.prevision.errors %}
+                        <div class="text-danger">{{ form.prevision.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.pertenece_pueblo_originario }}
+                        <label class="form-check-label" for="{{ form.pertenece_pueblo_originario.id_for_label }}">
+                            {{ form.pertenece_pueblo_originario.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ form.antecedentes_medicos.label }}</label>
+                {{ form.antecedentes_medicos }}
+                {% if form.antecedentes_medicos.errors %}
+                    <div class="text-danger">{{ form.antecedentes_medicos.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'core:madre_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

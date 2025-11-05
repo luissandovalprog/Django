@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Madre{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Información de la Madre</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'core:madre_list' %}" class="btn btn-secondary">Volver</a>
+        <a href="{% url 'core:madre_update' madre.pk %}" class="btn btn-warning">Editar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Datos Personales</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Nombre:</th>
+                        <td>{{ madre.nombre_descifrado|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>RUT:</th>
+                        <td>{{ madre.rut_descifrado|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ficha Clínica:</th>
+                        <td>{{ madre.ficha_clinica_id|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td>{{ madre.telefono_descifrado|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Nacimiento:</th>
+                        <td>{{ madre.fecha_nacimiento|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nacionalidad:</th>
+                        <td>{{ madre.nacionalidad|default:"---" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5>Información Médica</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Previsión:</th>
+                        <td>{{ madre.prevision|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Pueblo Originario:</th>
+                        <td>{% if madre.pertenece_pueblo_originario %}Sí{% else %}No{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>Antecedentes:</th>
+                        <td>{{ madre.antecedentes_medicos|default:"Sin antecedentes registrados" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5>Historial de Partos</h5>
+            </div>
+            <div class="card-body">
+                {% if partos %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo Parto</th>
+                                <th>Anestesia</th>
+                                <th>Edad Gestacional</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parto in partos %}
+                            <tr>
+                                <td>{{ parto.fecha_parto|date:"d/m/Y H:i" }}</td>
+                                <td>{{ parto.tipo_parto }}</td>
+                                <td>{{ parto.anestesia|default:"---" }}</td>
+                                <td>{{ parto.edad_gestacional|default:"---" }} sem</td>
+                                <td>
+                                    <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-sm btn-info">Ver</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay partos registrados para esta madre</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

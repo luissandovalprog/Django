@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Menú de Reportes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Generación de Reportes</h2>
+        <p class="text-muted">Seleccione el tipo de reporte que desea generar</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Reporte REM BS22</h5>
+            </div>
+            <div class="card-body">
+                <p>Genera el Reporte Estadístico Mensual BS22: Atenciones de Obstetricia y Ginecología según el Manual REM del Ministerio de Salud.</p>
+                <a href="{% url 'reportes:rem_bs22' %}" class="btn btn-primary">Generar REM BS22</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5>Exportar a Excel</h5>
+            </div>
+            <div class="card-body">
+                <p>Exporta los datos crudos de partos y recién nacidos a formato CSV compatible con Microsoft Excel para análisis posteriores.</p>
+                <a href="{% url 'reportes:exportar_excel' %}" class="btn btn-success">Exportar Datos</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

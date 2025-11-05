@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle del Parto{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Detalle del Parto</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'core:parto_list' %}" class="btn btn-secondary">Volver</a>
+        {% if user.puede_editar_partos %}
+        <a href="{% url 'core:parto_update' parto.pk %}" class="btn btn-warning">Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Información de la Madre</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Nombre:</th>
+                        <td>{{ parto.madre.nombre_descifrado|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ficha Clínica:</th>
+                        <td>{{ parto.madre.ficha_clinica_id|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Previsión:</th>
+                        <td>{{ parto.madre.prevision|default:"---" }}</td>
+                    </tr>
+                </table>
+                <a href="{% url 'core:madre_detail' parto.madre.pk %}" class="btn btn-sm btn-info">Ver Detalle Completo</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5>Información del Parto</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Fecha/Hora:</th>
+                        <td>{{ parto.fecha_parto|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tipo de Parto:</th>
+                        <td><span class="badge bg-primary">{{ parto.tipo_parto }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Anestesia:</th>
+                        <td>{{ parto.anestesia|default:"---" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Edad Gestacional:</th>
+                        <td>{{ parto.edad_gestacional|default:"---" }} semanas</td>
+                    </tr>
+                    <tr>
+                        <th>Registrado por:</th>
+                        <td>{{ parto.usuario_registro.nombre_completo }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Recién Nacidos</h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        {% if user.puede_crear_partos %}
+                        <a href="{% url 'core:recien_nacido_create' parto.pk %}" class="btn btn-sm btn-light">
+                            Agregar Recién Nacido
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if recien_nacidos %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Sexo</th>
+                                <th>Peso (g)</th>
+                                <th>Talla (cm)</th>
+                                <th>APGAR 1'</th>
+                                <th>APGAR 5'</th>
+                                <th>Profilaxis</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rn in recien_nacidos %}
+                            <tr>
+                                <td><span class="badge {% if rn.estado_al_nacer == 'Vivo' %}bg-success{% else %}bg-danger{% endif %}">{{ rn.estado_al_nacer }}</span></td>
+                                <td>{{ rn.sexo|default:"---" }}</td>
+                                <td>{{ rn.peso_gramos|default:"---" }}</td>
+                                <td>{{ rn.talla_cm|default:"---" }}</td>
+                                <td>{{ rn.apgar_1_min|default:"---" }}</td>
+                                <td>{{ rn.apgar_5_min|default:"---" }}</td>
+                                <td>
+                                    {% if rn.profilaxis_vit_k %}Vit K{% endif %}
+                                    {% if rn.profilaxis_oftalmica %}{% if rn.profilaxis_vit_k %}, {% endif %}Oftálmica{% endif %}
+                                </td>
+                                <td>
+                                    {% if user.puede_editar_partos %}
+                                    <a href="{% url 'recien_nacido_update' rn.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay recién nacidos registrados para este parto</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

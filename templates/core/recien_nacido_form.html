@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>{{ title }}</h2>
+        <p class="text-muted">Parto del {{ parto.fecha_parto|date:"d/m/Y" }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            {{ form.parto.as_hidden }}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.estado_al_nacer.label }}</label>
+                    {{ form.estado_al_nacer }}
+                    {% if form.estado_al_nacer.errors %}
+                        <div class="text-danger">{{ form.estado_al_nacer.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.sexo.label }}</label>
+                    {{ form.sexo }}
+                    {% if form.sexo.errors %}
+                        <div class="text-danger">{{ form.sexo.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.peso_gramos.label }}</label>
+                    {{ form.peso_gramos }}
+                    {% if form.peso_gramos.errors %}
+                        <div class="text-danger">{{ form.peso_gramos.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.talla_cm.label }}</label>
+                    {{ form.talla_cm }}
+                    {% if form.talla_cm.errors %}
+                        <div class="text-danger">{{ form.talla_cm.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.apgar_1_min.label }}</label>
+                    {{ form.apgar_1_min }}
+                    {% if form.apgar_1_min.errors %}
+                        <div class="text-danger">{{ form.apgar_1_min.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.apgar_5_min.label }}</label>
+                    {{ form.apgar_5_min }}
+                    {% if form.apgar_5_min.errors %}
+                        <div class="text-danger">{{ form.apgar_5_min.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        {{ form.profilaxis_vit_k }}
+                        <label class="form-check-label" for="{{ form.profilaxis_vit_k.id_for_label }}">
+                            {{ form.profilaxis_vit_k.label }}
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        {{ form.profilaxis_oftalmica }}
+                        <label class="form-check-label" for="{{ form.profilaxis_oftalmica.id_for_label }}">
+                            {{ form.profilaxis_oftalmica.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">{{ form.rut_provisorio.label }}</label>
+                    {{ form.rut_provisorio }}
+                    {% if form.rut_provisorio.errors %}
+                        <div class="text-danger">{{ form.rut_provisorio.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

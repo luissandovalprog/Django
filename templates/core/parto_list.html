@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Listado de Partos{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>Partos Registrados</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        {% if user.puede_crear_partos %}
+        <a href="{% url 'core:parto_create' %}" class="btn btn-primary">
+            Nuevo Parto
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha/Hora</th>
+                        <th>Madre</th>
+                        <th>Tipo Parto</th>
+                        <th>Anestesia</th>
+                        <th>Edad Gestacional</th>
+                        <th>Registrado por</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parto in partos %}
+                    <tr>
+                        <td>{{ parto.fecha_parto|date:"d/m/Y H:i" }}</td>
+                        <td>{{ parto.madre.nombre_descifrado|default:"---" }}</td>
+                        <td><span class="badge bg-primary">{{ parto.tipo_parto }}</span></td>
+                        <td>{{ parto.anestesia|default:"---" }}</td>
+                        <td>{{ parto.edad_gestacional|default:"---" }} sem</td>
+                        <td>{{ parto.usuario_registro.username }}</td>
+                        <td>
+                            <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-sm btn-info">Ver</a>
+                            {% if user.puede_editar_partos %}
+                            <a href="{% url 'core:parto_update' parto.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No hay partos registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

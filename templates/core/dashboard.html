@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Panel de Control</h2>
+        <p class="text-muted">Bienvenido, {{ user.nombre_completo }}</p>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Madres</h5>
+                <h2>{{ total_madres }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Partos</h5>
+                <h2>{{ total_partos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Recién Nacidos</h5>
+                <h2>{{ total_recien_nacidos }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Partos Este Mes</h5>
+                <h2>{{ partos_mes }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if user.puede_crear_partos %}
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'core:madre_create' %}" class="btn btn-outline-primary btn-lg w-100">
+                            <div class="py-2">
+                                <strong>Registrar Madre</strong>
+                                <p class="mb-0 small">Nuevo registro de madre</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'core:parto_create' %}" class="btn btn-outline-success btn-lg w-100">
+                            <div class="py-2">
+                                <strong>Registrar Parto</strong>
+                                <p class="mb-0 small">Nuevo registro de parto</p>
+                            </div>
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'core:parto_list' %}" class="btn btn-outline-info btn-lg w-100">
+                            <div class="py-2">
+                                <strong>Ver Partos</strong>
+                                <p class="mb-0 small">Listado de partos registrados</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimos Partos -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Últimos Partos Registrados</h5>
+            </div>
+            <div class="card-body">
+                {% if ultimos_partos %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Madre</th>
+                                <th>Tipo Parto</th>
+                                <th>Anestesia</th>
+                                <th>Registrado por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parto in ultimos_partos %}
+                            <tr>
+                                <td>{{ parto.fecha_parto|date:"d/m/Y H:i" }}</td>
+                                <td>{{ parto.madre.nombre_descifrado|default:"---" }}</td>
+                                <td>{{ parto.tipo_parto }}</td>
+                                <td>{{ parto.anestesia|default:"---" }}</td>
+                                <td>{{ parto.usuario_registro.username }}</td>
+                                <td>
+                                    <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-sm btn-info">Ver</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay partos registrados</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
