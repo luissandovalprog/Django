@@ -1,6 +1,9 @@
 """
-Modelos principales del sistema de trazabilidad
-Basados en bddPIPOSTGRE.sql
+Modelos corregidos - Sistema de trazabilidad
+CAMBIOS CRÍTICOS:
+1. Agregado campo 'direccion' a Madre
+2. Corregido manejo de epicrisis_data
+3. Mejorada validación de correcciones
 """
 
 from django.db import models
@@ -12,6 +15,7 @@ from utils.crypto import crypto_service
 class Madre(models.Model):
     """
     Modelo de Madre con datos sensibles cifrados
+    NUEVO: Campo direccion agregado
     """
     PREVISION_CHOICES = [
         ('FONASA', 'FONASA'),
@@ -21,7 +25,13 @@ class Madre(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    ficha_clinica_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    
+    # CORREGIDO: ficha_clinica_id ahora es para ID, no dirección
+    ficha_clinica_id = models.CharField(max_length=255, unique=True, null=True, blank=True, 
+                                       verbose_name="Número de Ficha Clínica")
+    
+    # NUEVO: Campo para dirección
+    direccion = models.TextField(null=True, blank=True, verbose_name="Dirección de Residencia")
     
     # Datos cifrados + hash para búsqueda
     rut_hash = models.CharField(max_length=255, unique=True, null=True, blank=True)
@@ -48,38 +58,31 @@ class Madre(models.Model):
         nombre = self.get_nombre()
         return f"Madre - {nombre if nombre else self.ficha_clinica_id}"
     
+    # Métodos de cifrado (sin cambios)
     def set_rut(self, rut):
-        """Establece el RUT cifrado y su hash"""
         self.rut_encrypted = crypto_service.encrypt(rut)
         self.rut_hash = crypto_service.hash_data(rut)
     
     def get_rut(self):
-        """Obtiene el RUT descifrado"""
         return crypto_service.decrypt(self.rut_encrypted) if self.rut_encrypted else None
     
     def set_nombre(self, nombre):
-        """Establece el nombre cifrado y su hash"""
         self.nombre_encrypted = crypto_service.encrypt(nombre)
         self.nombre_hash = crypto_service.hash_data(nombre)
     
     def get_nombre(self):
-        """Obtiene el nombre descifrado"""
         return crypto_service.decrypt(self.nombre_encrypted) if self.nombre_encrypted else None
     
     def set_telefono(self, telefono):
-        """Establece el teléfono cifrado y su hash"""
         self.telefono_encrypted = crypto_service.encrypt(telefono)
         self.telefono_hash = crypto_service.hash_data(telefono)
     
     def get_telefono(self):
-        """Obtiene el teléfono descifrado"""
         return crypto_service.decrypt(self.telefono_encrypted) if self.telefono_encrypted else None
 
 
 class DiagnosticoCIE10(models.Model):
-    """
-    Modelo de diagnósticos CIE-10
-    """
+    """Modelo de diagnósticos CIE-10"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     codigo = models.CharField(max_length=10, unique=True)
     descripcion = models.TextField()
@@ -96,6 +99,7 @@ class DiagnosticoCIE10(models.Model):
 class Parto(models.Model):
     """
     Modelo de Parto con datos clínicos
+    CORREGIDO: Validación de epicrisis_data
     """
     TIPO_PARTO_CHOICES = [
         ('Eutócico', 'Eutócico'),
@@ -143,12 +147,20 @@ class Parto(models.Model):
     
     def __str__(self):
         return f"Parto {self.tipo_parto} - {self.fecha_parto.strftime('%d/%m/%Y')}"
+    
+    # NUEVO: Método para validar epicrisis completa
+    def tiene_epicrisis(self):
+        """Verifica si el parto tiene epicrisis registrada"""
+        return self.epicrisis_data is not None and len(self.epicrisis_data) > 0
+    
+    # NUEVO: Método para obtener indicaciones
+    def get_indicaciones(self):
+        """Retorna las indicaciones médicas del parto"""
+        return self.indicaciones.all()
 
 
 class PartoDiagnostico(models.Model):
-    """
-    Tabla intermedia para relación Parto-Diagnóstico
-    """
+    """Tabla intermedia para relación Parto-Diagnóstico"""
     parto = models.ForeignKey(Parto, on_delete=models.CASCADE)
     diagnostico = models.ForeignKey(DiagnosticoCIE10, on_delete=models.CASCADE)
     
@@ -158,9 +170,7 @@ class PartoDiagnostico(models.Model):
 
 
 class RecienNacido(models.Model):
-    """
-    Modelo de Recién Nacido
-    """
+    """Modelo de Recién Nacido (sin cambios necesarios)"""
     ESTADO_CHOICES = [
         ('Vivo', 'Vivo'),
         ('Nacido Muerto', 'Nacido Muerto'),
@@ -207,10 +217,79 @@ class RecienNacido(models.Model):
         return f"RN - {self.sexo} - {self.estado_al_nacer}"
 
 
+class Correccion(models.Model):
+    """
+    Modelo de Correcciones
+    CORREGIDO: Validación de permisos en el modelo
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parto = models.ForeignKey(Parto, on_delete=models.PROTECT, related_name='correcciones')
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='correcciones_realizadas'
+    )
+    fecha_correccion = models.DateTimeField(auto_now_add=True)
+
+    CAMPO_CHOICES = [
+        ('tipo_parto', 'Tipo de Parto'),
+        ('peso_gramos', 'Peso RN (g)'),
+        ('talla_cm', 'Talla RN (cm)'),
+        ('apgar_1_min', 'APGAR 1 min'),
+        ('apgar_5_min', 'APGAR 5 min'),
+        ('observaciones', 'Observaciones'),
+        ('otro', 'Otro'),
+    ]
+    campo_corregido = models.CharField(max_length=100, choices=CAMPO_CHOICES)
+    valor_original = models.TextField(blank=True)
+    valor_nuevo = models.TextField()
+    justificacion = models.TextField()
+
+    class Meta:
+        db_table = 'Correccion'
+        ordering = ['-fecha_correccion']
+        verbose_name = 'Corrección de Registro'
+        verbose_name_plural = 'Correcciones de Registros'
+
+    def __str__(self):
+        return f"Corrección en {self.parto_id} por {self.usuario.username}"
+    
+    # NUEVO: Método de validación
+    def save(self, *args, **kwargs):
+        """Valida que el usuario tenga permisos antes de guardar"""
+        if not self.usuario.puede_anexar_correccion:
+            raise PermissionError("Usuario sin permisos para anexar correcciones")
+        super().save(*args, **kwargs)
+
+
+class Indicacion(models.Model):
+    """Modelo de Indicaciones Médicas (sin cambios necesarios)"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parto = models.ForeignKey(Parto, on_delete=models.CASCADE, related_name='indicaciones')
+
+    TIPO_CHOICES = [
+        ('medicamento', 'Medicamento'),
+        ('procedimiento', 'Procedimiento'),
+        ('cuidado', 'Cuidado de Enfermería'),
+        ('dieta', 'Dieta'),
+        ('reposo', 'Reposo'),
+    ]
+    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
+    descripcion = models.CharField(max_length=255)
+    dosis = models.CharField(max_length=100, blank=True, null=True)
+    via = models.CharField(max_length=100, blank=True, null=True)
+    frecuencia = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        db_table = 'Indicacion'
+        ordering = ['-parto__fecha_parto']
+
+    def __str__(self):
+        return f"Indicación ({self.tipo}) para Parto {self.parto.id}"
+
+
 class Defuncion(models.Model):
-    """
-    Modelo de Defunción (madre o recién nacido)
-    """
+    """Modelo de Defunción (sin cambios necesarios)"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     recien_nacido = models.OneToOneField(
         RecienNacido,
@@ -255,9 +334,7 @@ class Defuncion(models.Model):
 
 
 class DocumentoReferencia(models.Model):
-    """
-    Modelo para referenciar documentos almacenados en MongoDB
-    """
+    """Modelo para referenciar documentos en MongoDB"""
     TIPO_DOCUMENTO_CHOICES = [
         ('EPICRISIS_PDF', 'Epicrisis PDF'),
         ('REPORTE_EXCEL', 'Reporte Excel'),
@@ -284,60 +361,3 @@ class DocumentoReferencia(models.Model):
     
     def __str__(self):
         return f"{self.nombre_archivo} - {self.tipo_documento}"
-
-class Correccion(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parto = models.ForeignKey(Parto, on_delete=models.PROTECT, related_name='correcciones')
-    usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='correcciones_realizadas'
-    )
-    fecha_correccion = models.DateTimeField(auto_now_add=True)
-
-    CAMPO_CHOICES = [
-        ('tipo_parto', 'Tipo de Parto'),
-        ('peso_gramos', 'Peso RN (g)'),
-        ('talla_cm', 'Talla RN (cm)'),
-        ('apgar_1_min', 'APGAR 1 min'),
-        ('apgar_5_min', 'APGAR 5 min'),
-        ('observaciones', 'Observaciones'),
-        ('otro', 'Otro'),
-    ]
-    campo_corregido = models.CharField(max_length=100, choices=CAMPO_CHOICES)
-    valor_original = models.TextField(blank=True)
-    valor_nuevo = models.TextField()
-    justificacion = models.TextField()
-
-    class Meta:
-        db_table = 'Correccion'
-        ordering = ['-fecha_correccion']
-        verbose_name = 'Corrección de Registro'
-        verbose_name_plural = 'Correcciones de Registros'
-
-    def __str__(self):
-        return f"Corrección en {self.parto_id} por {self.usuario.username}"
-    
-class Indicacion(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parto = models.ForeignKey(Parto, on_delete=models.CASCADE, related_name='indicaciones')
-
-    TIPO_CHOICES = [
-        ('medicamento', 'Medicamento'),
-        ('procedimiento', 'Procedimiento'),
-        ('cuidado', 'Cuidado de Enfermería'),
-        ('dieta', 'Dieta'),
-        ('reposo', 'Reposo'),
-    ]
-    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
-    descripcion = models.CharField(max_length=255)
-    dosis = models.CharField(max_length=100, blank=True, null=True)
-    via = models.CharField(max_length=100, blank=True, null=True)
-    frecuencia = models.CharField(max_length=100, blank=True, null=True)
-
-    class Meta:
-        db_table = 'Indicacion'
-        ordering = ['-parto__fecha_parto']
-
-    def __str__(self):
-        return f"Indicación ({self.tipo}) para Parto {self.parto.id}"

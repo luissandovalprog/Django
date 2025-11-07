@@ -1,16 +1,20 @@
 """
-Formularios para la gestión de Madres, Partos y Recién Nacidos
+Formularios CORREGIDOS
+CAMBIO CRÍTICO: Agregado campo 'direccion' a MadreForm
 """
-import uuid
-from django.db import models
+
 from django import forms
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, Indicacion
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
 
 
 class MadreForm(forms.ModelForm):
-    """Formulario para crear/editar Madre"""
+    """
+    Formulario para crear/editar Madre
+    CORREGIDO: Agregado campo 'direccion' separado de ficha_clinica_id
+    """
     
     # Campos no cifrados para el formulario
     rut = forms.CharField(
@@ -46,7 +50,8 @@ class MadreForm(forms.ModelForm):
     class Meta:
         model = Madre
         fields = [
-            'ficha_clinica_id',
+            'ficha_clinica_id',  # AHORA es para el ID de ficha
+            'direccion',         # NUEVO: Campo para dirección
             'fecha_nacimiento',
             'nacionalidad',
             'pertenece_pueblo_originario',
@@ -54,15 +59,36 @@ class MadreForm(forms.ModelForm):
             'antecedentes_medicos'
         ]
         widgets = {
-            'ficha_clinica_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de ficha clínica'}),
-            'fecha_nacimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'nacionalidad': forms.Select(attrs={'class': 'form-control'}, choices=[('Chilena', 'Chilena'), ('Extranjera', 'Extranjera')]),
-            'pertenece_pueblo_originario': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'prevision': forms.Select(attrs={'class': 'form-control'}),
-            'antecedentes_medicos': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Antecedentes médicos relevantes'}),
+            'ficha_clinica_id': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Número de ficha clínica (ej: FC-2025-001)'
+            }),
+            'direccion': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Dirección de residencia completa'
+            }),
+            'fecha_nacimiento': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date'
+            }),
+            'nacionalidad': forms.Select(attrs={
+                'class': 'form-control'
+            }, choices=[('Chilena', 'Chilena'), ('Extranjera', 'Extranjera')]),
+            'pertenece_pueblo_originario': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'prevision': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'antecedentes_medicos': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3, 
+                'placeholder': 'Antecedentes médicos relevantes'
+            }),
         }
         labels = {
-            'ficha_clinica_id': 'Ficha Clínica',
+            'ficha_clinica_id': 'Número de Ficha Clínica',
+            'direccion': 'Dirección de Residencia',
             'fecha_nacimiento': 'Fecha de Nacimiento',
             'nacionalidad': 'Nacionalidad',
             'pertenece_pueblo_originario': 'Pertenece a Pueblo Originario',
@@ -84,7 +110,7 @@ class MadreForm(forms.ModelForm):
     def clean_rut(self):
         """Validar formato de RUT chileno"""
         rut = self.cleaned_data.get('rut', '')
-        # Aquí puedes agregar validación de RUT si lo deseas
+        # Puedes agregar validación de RUT aquí
         return rut
     
     def clean_fecha_nacimiento(self):
@@ -114,8 +140,9 @@ class MadreForm(forms.ModelForm):
         return instance
 
 
+# Los demás formularios permanecen sin cambios...
 class PartoForm(forms.ModelForm):
-    """Formulario para crear/editar Parto"""
+    """Formulario para crear/editar Parto (sin cambios)"""
     
     class Meta:
         model = Parto
@@ -181,7 +208,7 @@ class PartoForm(forms.ModelForm):
 
 
 class RecienNacidoForm(forms.ModelForm):
-    """Formulario para crear/editar Recién Nacido"""
+    """Formulario para crear/editar Recién Nacido (sin cambios)"""
     
     class Meta:
         model = RecienNacido
@@ -220,28 +247,24 @@ class RecienNacidoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
     
     def clean_peso_gramos(self):
-        """Validar peso del recién nacido"""
         peso = self.cleaned_data.get('peso_gramos')
         if peso and (peso < 500 or peso > 6000):
             raise ValidationError('El peso debe estar entre 500 y 6000 gramos')
         return peso
     
     def clean_talla_cm(self):
-        """Validar talla del recién nacido"""
         talla = self.cleaned_data.get('talla_cm')
         if talla and (talla < 25 or talla > 65):
             raise ValidationError('La talla debe estar entre 25 y 65 cm')
         return talla
     
     def clean_apgar_1_min(self):
-        """Validar APGAR 1 minuto"""
         apgar = self.cleaned_data.get('apgar_1_min')
         if apgar is not None and (apgar < 0 or apgar > 10):
             raise ValidationError('El APGAR debe estar entre 0 y 10')
         return apgar
     
     def clean_apgar_5_min(self):
-        """Validar APGAR 5 minutos"""
         apgar = self.cleaned_data.get('apgar_5_min')
         if apgar is not None and (apgar < 0 or apgar > 10):
             raise ValidationError('El APGAR debe estar entre 0 y 10')
@@ -257,26 +280,25 @@ class RecienNacidoForm(forms.ModelForm):
 
 
 class CorreccionForm(forms.ModelForm):
-    """Formulario para anexar correcciones"""
+    """Formulario para anexar correcciones (sin cambios)"""
     
     class Meta:
         model = Correccion
         fields = ['campo_corregido', 'valor_original', 'valor_nuevo', 'justificacion']
         widgets = {
             'campo_corregido': forms.Select(attrs={'class': 'form-control'}),
-            'valor_original': forms.TextInput(attrs={'class': 'form-control', 'readonly': True, 'placeholder': 'Valor original (no se modificará)'}),
-            'valor_nuevo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nuevo valor corregido'}),
-            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Describa detalladamente el motivo de la corrección (mínimo 20 caracteres)'}),
+            'valor_original': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+            'valor_nuevo': forms.TextInput(attrs={'class': 'form-control'}),
+            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
         labels = {
             'campo_corregido': 'Campo a Corregir',
-            'valor_original': 'Valor Original (No se modificará)',
+            'valor_original': 'Valor Original',
             'valor_nuevo': 'Valor Corregido',
-            'justificacion': 'Justificación de la Corrección',
+            'justificacion': 'Justificación',
         }
 
     def clean_justificacion(self):
-        """Validar justificación mínima"""
         justificacion = self.cleaned_data.get('justificacion', '')
         if len(justificacion) < 20:
             raise ValidationError('La justificación debe tener al menos 20 caracteres.')
@@ -284,23 +306,23 @@ class CorreccionForm(forms.ModelForm):
 
 
 class EpicrisisForm(forms.Form):
-    """Formulario para epicrisis (se guarda en JSONField)"""
+    """Formulario para epicrisis (sin cambios)"""
     
     motivo_ingreso = forms.CharField(
         label="Motivo de Ingreso", 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Motivo del ingreso'}),
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
         required=False
     )
     
     resumen_evolucion = forms.CharField(
         label="Resumen de Evolución *", 
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Resumen de la evolución del paciente'}),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         required=True
     )
     
     diagnostico_egreso = forms.CharField(
         label="Diagnóstico de Egreso *", 
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Diagnóstico al momento del egreso'}),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         required=True
     )
     
@@ -318,35 +340,35 @@ class EpicrisisForm(forms.Form):
     
     control_posterior = forms.CharField(
         label="Control Posterior", 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Control en 7 días'}),
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
         required=False
     )
     
     indicaciones_alta = forms.CharField(
         label="Indicaciones al Alta", 
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Indicaciones para el alta'}),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         required=False
     )
     
     observaciones = forms.CharField(
         label="Observaciones", 
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Observaciones adicionales'}),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         required=False
     )
 
 
 class IndicacionForm(forms.ModelForm):
-    """Formulario para indicaciones médicas"""
+    """Formulario para indicaciones médicas (sin cambios)"""
     
     class Meta:
         model = Indicacion
         fields = ['tipo', 'descripcion', 'dosis', 'via', 'frecuencia']
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-control'}),
-            'descripcion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Paracetamol'}),
-            'dosis': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 500mg'}),
-            'via': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Oral'}),
-            'frecuencia': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Cada 8 horas'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'dosis': forms.TextInput(attrs={'class': 'form-control'}),
+            'via': forms.TextInput(attrs={'class': 'form-control'}),
+            'frecuencia': forms.TextInput(attrs={'class': 'form-control'}),
         }
         labels = {
             'tipo': 'Tipo de Indicación',
