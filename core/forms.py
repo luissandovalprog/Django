@@ -6,23 +6,12 @@ from django.db import models
 from django import forms
 from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, Indicacion
 from django.forms import inlineformset_factory
+from django.core.exceptions import ValidationError
 
-class PartoForm(forms.ModelForm):
-    class Meta:
-        model = Parto
-        fields = ['madre', 'fecha_parto', 'edad_gestacional', 'tipo_parto', 'anestesia']
-        widgets = {
-            'madre': forms.Select(attrs={'class': 'select'}),
-            'fecha_parto': forms.DateTimeInput(attrs={'class': 'input', 'type': 'datetime-local'}),
-            'edad_gestacional': forms.NumberInput(attrs={'class': 'input', 'min': '20', 'max': '45'}),
-            'tipo_parto': forms.Select(attrs={'class': 'select'}),
-            'anestesia': forms.Select(attrs={'class': 'select'}),
-        }
 
 class MadreForm(forms.ModelForm):
-    """
-    Formulario para crear/editar Madre
-    """
+    """Formulario para crear/editar Madre"""
+    
     # Campos no cifrados para el formulario
     rut = forms.CharField(
         max_length=12,
@@ -33,15 +22,17 @@ class MadreForm(forms.ModelForm):
             'placeholder': '12.345.678-9'
         })
     )
+    
     nombre = forms.CharField(
         max_length=255,
         required=True,
         label='Nombre Completo',
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nombre completo de la madre'
+            'placeholder': 'Nombre completo de la paciente'
         })
     )
+    
     telefono = forms.CharField(
         max_length=20,
         required=False,
@@ -63,12 +54,12 @@ class MadreForm(forms.ModelForm):
             'antecedentes_medicos'
         ]
         widgets = {
-            'ficha_clinica_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'ficha_clinica_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de ficha clínica'}),
             'fecha_nacimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'nacionalidad': forms.TextInput(attrs={'class': 'form-control'}),
+            'nacionalidad': forms.Select(attrs={'class': 'form-control'}, choices=[('Chilena', 'Chilena'), ('Extranjera', 'Extranjera')]),
             'pertenece_pueblo_originario': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'prevision': forms.Select(attrs={'class': 'form-control'}),
-            'antecedentes_medicos': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'antecedentes_medicos': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Antecedentes médicos relevantes'}),
         }
         labels = {
             'ficha_clinica_id': 'Ficha Clínica',
@@ -90,6 +81,25 @@ class MadreForm(forms.ModelForm):
             kwargs['initial'] = initial
         super().__init__(*args, **kwargs)
     
+    def clean_rut(self):
+        """Validar formato de RUT chileno"""
+        rut = self.cleaned_data.get('rut', '')
+        # Aquí puedes agregar validación de RUT si lo deseas
+        return rut
+    
+    def clean_fecha_nacimiento(self):
+        """Validar que la fecha de nacimiento sea válida"""
+        fecha = self.cleaned_data.get('fecha_nacimiento')
+        if fecha:
+            from datetime import date
+            if fecha > date.today():
+                raise ValidationError('La fecha de nacimiento no puede ser futura')
+            # Calcular edad
+            edad = (date.today() - fecha).days // 365
+            if edad < 12 or edad > 60:
+                raise ValidationError('La edad debe estar entre 12 y 60 años')
+        return fecha
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
         
@@ -105,9 +115,8 @@ class MadreForm(forms.ModelForm):
 
 
 class PartoForm(forms.ModelForm):
-    """
-    Formulario para crear/editar Parto
-    """
+    """Formulario para crear/editar Parto"""
+    
     class Meta:
         model = Parto
         fields = [
@@ -126,7 +135,8 @@ class PartoForm(forms.ModelForm):
             'edad_gestacional': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '20',
-                'max': '45'
+                'max': '45',
+                'placeholder': 'Semanas de gestación'
             }),
             'tipo_parto': forms.Select(attrs={'class': 'form-control'}),
             'anestesia': forms.Select(attrs={'class': 'form-control'}),
@@ -145,13 +155,20 @@ class PartoForm(forms.ModelForm):
         
         # Mostrar el nombre descifrado de las madres en el selector
         if 'madre' in self.fields:
-            choices = [(None, '---------')]
+            choices = [('', '---------')]
             for madre in Madre.objects.all():
                 nombre = madre.get_nombre()
                 ficha = madre.ficha_clinica_id
                 label = f"{nombre} - Ficha: {ficha}" if nombre and ficha else (nombre or ficha or str(madre.id))
                 choices.append((madre.id, label))
             self.fields['madre'].choices = choices
+    
+    def clean_edad_gestacional(self):
+        """Validar edad gestacional"""
+        edad = self.cleaned_data.get('edad_gestacional')
+        if edad and (edad < 20 or edad > 45):
+            raise ValidationError('La edad gestacional debe estar entre 20 y 45 semanas')
+        return edad
     
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -162,7 +179,10 @@ class PartoForm(forms.ModelForm):
             self.save_m2m()
         return instance
 
+
 class RecienNacidoForm(forms.ModelForm):
+    """Formulario para crear/editar Recién Nacido"""
+    
     class Meta:
         model = RecienNacido
         fields = [
@@ -171,62 +191,14 @@ class RecienNacidoForm(forms.ModelForm):
             'profilaxis_vit_k', 'profilaxis_oftalmica'
         ]
         widgets = {
-            'parto': forms.Select(attrs={'class': 'select'}),
-            'rut_provisorio': forms.TextInput(attrs={'class': 'input'}),
-            'estado_al_nacer': forms.Select(attrs={'class': 'select'}),
-            'sexo': forms.Select(attrs={'class': 'select'}),
-            'peso_gramos': forms.NumberInput(attrs={'class': 'input', 'min': '500', 'max': '6000'}),
-            'talla_cm': forms.NumberInput(attrs={'class': 'input', 'min': '25', 'max': '65', 'step': '0.1'}),
-            'apgar_1_min': forms.NumberInput(attrs={'class': 'input', 'min': '0', 'max': '10'}),
-            'apgar_5_min': forms.NumberInput(attrs={'class': 'input', 'min': '0', 'max': '10'}),
-            'profilaxis_vit_k': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded'}),
-            'profilaxis_oftalmica': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded'}),
-        }
-
-class RecienNacidoForm(forms.ModelForm):
-    """
-    Formulario para crear/editar Recién Nacido
-    """
-    class Meta:
-        model = RecienNacido
-        fields = [
-            'parto',
-            'rut_provisorio',
-            'estado_al_nacer',
-            'sexo',
-            'peso_gramos',
-            'talla_cm',
-            'apgar_1_min',
-            'apgar_5_min',
-            'profilaxis_vit_k',
-            'profilaxis_oftalmica',
-        ]
-        widgets = {
             'parto': forms.Select(attrs={'class': 'form-control'}),
-            'rut_provisorio': forms.TextInput(attrs={'class': 'form-control'}),
+            'rut_provisorio': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT provisorio'}),
             'estado_al_nacer': forms.Select(attrs={'class': 'form-control'}),
             'sexo': forms.Select(attrs={'class': 'form-control'}),
-            'peso_gramos': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '500',
-                'max': '6000'
-            }),
-            'talla_cm': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '25',
-                'max': '65',
-                'step': '0.1'
-            }),
-            'apgar_1_min': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'max': '10'
-            }),
-            'apgar_5_min': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'max': '10'
-            }),
+            'peso_gramos': forms.NumberInput(attrs={'class': 'form-control', 'min': '500', 'max': '6000', 'placeholder': 'Peso en gramos'}),
+            'talla_cm': forms.NumberInput(attrs={'class': 'form-control', 'min': '25', 'max': '65', 'step': '0.1', 'placeholder': 'Talla en cm'}),
+            'apgar_1_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
+            'apgar_5_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
             'profilaxis_vit_k': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'profilaxis_oftalmica': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -247,23 +219,54 @@ class RecienNacidoForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
     
+    def clean_peso_gramos(self):
+        """Validar peso del recién nacido"""
+        peso = self.cleaned_data.get('peso_gramos')
+        if peso and (peso < 500 or peso > 6000):
+            raise ValidationError('El peso debe estar entre 500 y 6000 gramos')
+        return peso
+    
+    def clean_talla_cm(self):
+        """Validar talla del recién nacido"""
+        talla = self.cleaned_data.get('talla_cm')
+        if talla and (talla < 25 or talla > 65):
+            raise ValidationError('La talla debe estar entre 25 y 65 cm')
+        return talla
+    
+    def clean_apgar_1_min(self):
+        """Validar APGAR 1 minuto"""
+        apgar = self.cleaned_data.get('apgar_1_min')
+        if apgar is not None and (apgar < 0 or apgar > 10):
+            raise ValidationError('El APGAR debe estar entre 0 y 10')
+        return apgar
+    
+    def clean_apgar_5_min(self):
+        """Validar APGAR 5 minutos"""
+        apgar = self.cleaned_data.get('apgar_5_min')
+        if apgar is not None and (apgar < 0 or apgar > 10):
+            raise ValidationError('El APGAR debe estar entre 0 y 10')
+        return apgar
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
-        if self.user:
+        if self.user and not instance.usuario_registro:
             instance.usuario_registro = self.user
         if commit:
             instance.save()
         return instance
 
+
 class CorreccionForm(forms.ModelForm):
+    """Formulario para anexar correcciones"""
+    
     class Meta:
         model = Correccion
         fields = ['campo_corregido', 'valor_original', 'valor_nuevo', 'justificacion']
         widgets = {
-            'campo_corregido': forms.Select(attrs={'class': 'select'}),
-            'valor_original': forms.TextInput(attrs={'class': 'input bg-gray-100', 'readonly': True}),
-            'valor_nuevo': forms.TextInput(attrs={'class': 'input border-green-500 border-2'}),
-            'justificacion': forms.Textarea(attrs={'class': 'textarea border-green-500 border-2', 'rows': 4, 'placeholder': 'Describa detalladamente el motivo... (mínimo 20 caracteres)'}),
+            'campo_corregido': forms.Select(attrs={'class': 'form-control'}),
+            'valor_original': forms.TextInput(attrs={'class': 'form-control', 'readonly': True, 'placeholder': 'Valor original (no se modificará)'}),
+            'valor_nuevo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nuevo valor corregido'}),
+            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Describa detalladamente el motivo de la corrección (mínimo 20 caracteres)'}),
         }
         labels = {
             'campo_corregido': 'Campo a Corregir',
@@ -273,45 +276,88 @@ class CorreccionForm(forms.ModelForm):
         }
 
     def clean_justificacion(self):
-        justificacion = self.cleaned_data.get('justificacion')
+        """Validar justificación mínima"""
+        justificacion = self.cleaned_data.get('justificacion', '')
         if len(justificacion) < 20:
-            raise forms.ValidationError('La justificación debe tener al menos 20 caracteres.')
+            raise ValidationError('La justificación debe tener al menos 20 caracteres.')
         return justificacion
 
-class EpicrisisForm(forms.ModelForm):
-    # Campos de Epicrisis que no son modelo, se guardarán en JSONField
-    motivo_ingreso = forms.CharField(label="Motivo de Ingreso", widget=forms.TextInput(attrs={'class': 'input'}), required=False)
-    resumen_evolucion = forms.CharField(label="Resumen de Evolución *", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 4}))
-    diagnostico_egreso = forms.CharField(label="Diagnóstico de Egreso *", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}))
-    condicion_egreso = forms.ChoiceField(
-        label="Condición al Egreso", 
-        choices=[('buena', 'Buena'), ('regular', 'Regular'), ('grave', 'Grave'), ('fallecido', 'Fallecido')],
-        widget=forms.Select(attrs={'class': 'select'})
-    )
-    control_posterior = forms.CharField(label="Control Posterior", widget=forms.TextInput(attrs={'class': 'input'}), required=False)
-    indicaciones_alta = forms.CharField(label="Indicaciones al Alta", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}), required=False)
-    observaciones = forms.CharField(label="Observaciones", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 2}), required=False)
 
-    class Meta:
-        model = Parto
-        fields = []
+class EpicrisisForm(forms.Form):
+    """Formulario para epicrisis (se guarda en JSONField)"""
+    
+    motivo_ingreso = forms.CharField(
+        label="Motivo de Ingreso", 
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Motivo del ingreso'}),
+        required=False
+    )
+    
+    resumen_evolucion = forms.CharField(
+        label="Resumen de Evolución *", 
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Resumen de la evolución del paciente'}),
+        required=True
+    )
+    
+    diagnostico_egreso = forms.CharField(
+        label="Diagnóstico de Egreso *", 
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Diagnóstico al momento del egreso'}),
+        required=True
+    )
+    
+    condicion_egreso = forms.ChoiceField(
+        label="Condición al Egreso *", 
+        choices=[
+            ('buena', 'Buena'),
+            ('regular', 'Regular'),
+            ('grave', 'Grave'),
+            ('fallecido', 'Fallecido')
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
+    
+    control_posterior = forms.CharField(
+        label="Control Posterior", 
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Control en 7 días'}),
+        required=False
+    )
+    
+    indicaciones_alta = forms.CharField(
+        label="Indicaciones al Alta", 
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Indicaciones para el alta'}),
+        required=False
+    )
+    
+    observaciones = forms.CharField(
+        label="Observaciones", 
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Observaciones adicionales'}),
+        required=False
+    )
+
 
 class IndicacionForm(forms.ModelForm):
+    """Formulario para indicaciones médicas"""
+    
     class Meta:
         model = Indicacion
         fields = ['tipo', 'descripcion', 'dosis', 'via', 'frecuencia']
         widgets = {
-            'tipo': forms.Select(attrs={'class': 'select'}),
-            'descripcion': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Paracetamol'}),
-            'dosis': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: 500mg'}),
-            'via': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Oral'}),
-            'frecuencia': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Cada 8 horas'}),
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Paracetamol'}),
+            'dosis': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 500mg'}),
+            'via': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Oral'}),
+            'frecuencia': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Cada 8 horas'}),
         }
         labels = {
+            'tipo': 'Tipo de Indicación',
             'descripcion': 'Descripción *',
+            'dosis': 'Dosis',
+            'via': 'Vía de Administración',
+            'frecuencia': 'Frecuencia',
         }
 
-# Creamos el Formset
+
+# Formset para indicaciones
 IndicacionFormSet = inlineformset_factory(
     Parto, 
     Indicacion, 

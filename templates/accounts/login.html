@@ -29,6 +29,12 @@
                 {% endfor %}
             {% endif %}
 
+            {% if form.errors %}
+            <div class="alert alert-danger" style="margin: 0 30px 20px;">
+                Usuario o contraseña incorrectos
+            </div>
+            {% endif %}
+
             <form method="post" action="{% url 'accounts:login' %}" class="login-form">
                 {% csrf_token %}
                 
@@ -39,11 +45,13 @@
                            name="{{ form.username.name }}"
                            class="form-input" 
                            placeholder="Ingrese su nombre"
-                           required>
+                           value="{{ form.username.value|default:'' }}"
+                           required
+                           autofocus>
                 </div>
 
                 <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}">Contraseña (Simulada)</label>
+                    <label for="{{ form.password.id_for_label }}">Contraseña</label>
                     <input type="password" 
                            id="{{ form.password.id_for_label }}" 
                            name="{{ form.password.name }}"
@@ -52,36 +60,19 @@
                            required>
                 </div>
 
-                <div class="form-group">
-                    <label for="turno">Turno (Enfermera/Matrona)</label>
-                    <select id="turno" name="turno" class="form-select">
-                        <option value="diurno">Diurno (08:00 - 20:00)</option>
-                        <option value="nocturno">Nocturno (20:00 - 08:00)</option>
-                    </select>
-                </div>
-
-                <div class="button-group">
-                    <button type="submit" class="btn btn-blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        Acceder como Administrativo
-                    </button>
-                    
-                    <button type="submit" class="btn btn-green">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Acceder como Matrona
-                    </button>
-                    
-                    <button type="submit" class="btn btn-purple">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Acceder como Médico
-                    </button>
-                    
-                    <button type="submit" class="btn btn-cyan">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        Acceder como Enfermera
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    Iniciar Sesión
+                </button>
             </form>
+
+            <div class="login-footer">
+                <p>Las vistas se mostrarán según sus permisos de usuario</p>
+            </div>
         </div>
     </div>
 </body>

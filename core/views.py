@@ -8,40 +8,47 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Count, Q
 from datetime import datetime, timedelta
-from .models import Madre, Parto, RecienNacido
-from .forms import MadreForm, PartoForm, RecienNacidoForm
-from auditoria.models import LogAuditoria
-from .forms import CorreccionForm
-from .models import Correccion
-from .forms import EpicrisisForm, IndicacionFormSet
-from utils.crypto import crypto_service
 from django.utils import timezone
+from .models import Madre, Parto, RecienNacido, Correccion, Indicacion
+from .forms import MadreForm, PartoForm, RecienNacidoForm, CorreccionForm, EpicrisisForm, IndicacionFormSet
+from auditoria.models import LogAuditoria
+from utils.crypto import crypto_service
+
+
+def get_client_ip(request):
+    """Obtiene la IP del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
 
 @login_required
 def dashboard(request):
     """
-    Dashboard principal con estadísticas y filtrado (migrado de React)
+    Dashboard principal con estadísticas y filtrado
     """
     busqueda_query = request.GET.get('busqueda', '')
 
-    # Lógica de filtrado base (React: perteneceATurno)
+    # Lógica de filtrado base
     madres_qs = Madre.objects.all()
-    partos_qs = Parto.objects.select_related('madre', 'usuario_registro')
+    partos_qs = Parto.objects.select_related('madre', 'usuario_registro').prefetch_related('recien_nacidos')
 
-    # Lógica de permisos de React
+    # Lógica de permisos
     if not request.user.puede_ver_todos_partos:
-        # Filtra partos y madres por el usuario (Matrona/Enfermera por turno)
-        # NOTA: El modelo Django actual filtra por 'usuario_registro'. 
-        # El modelo React filtra por 'turno'. 
-        # Asumiremos 'usuario_registro' como la lógica de negocio final.
+        # Filtra partos por el usuario actual (Matrona/Enfermera por turno)
         partos_qs = partos_qs.filter(usuario_registro=request.user)
         madres_qs = madres_qs.filter(partos__usuario_registro=request.user).distinct()
 
-    # Lógica de búsqueda (React: busqueda)
+    # Lógica de búsqueda
     if busqueda_query:
+        # Buscar por RUT hasheado, nombre hasheado o ficha clínica
         partos_qs = partos_qs.filter(
-            Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) | # Asumiendo búsqueda por RUT hasheado
-            Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) | # Asumiendo búsqueda por Nombre hasheado
+            Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(madre__ficha_clinica_id__icontains=busqueda_query) |
             Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
         ).distinct()
 
@@ -51,27 +58,28 @@ def dashboard(request):
             Q(ficha_clinica_id__icontains=busqueda_query)
         ).distinct()
 
-    # Lógica de estadísticas (React: useMemo)
+    # Estadísticas
     total_madres = madres_qs.count()
     total_partos = partos_qs.count()
 
     mes_actual = datetime.now().replace(day=1)
     partos_mes = partos_qs.filter(fecha_parto__gte=mes_actual).count()
 
-    # Lógica de "Partos Hoy" (React: partosHoy)
-    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0)
+    # Partos hoy
+    hoy_inicio = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     hoy_fin = hoy_inicio + timedelta(days=1)
     partos_hoy = partos_qs.filter(fecha_parto__gte=hoy_inicio, fecha_parto__lt=hoy_fin).count()
 
-    # Lógica de "Recién Nacidos"
+    # Recién nacidos
     total_recien_nacidos = RecienNacido.objects.filter(parto__in=partos_qs).count()
 
-    # Lógica de "Últimos partos" (React: partosRecientes)
+    # Últimos partos
     ultimos_partos = partos_qs.order_by('-fecha_parto')[:10]
     for p in ultimos_partos:
         p.madre.nombre_descifrado = p.madre.get_nombre()
+        p.madre.rut_descifrado = p.madre.get_rut()
 
-    # Lógica de "Madres sin parto" (React)
+    # Madres sin parto
     madres_sin_parto = madres_qs.filter(partos__isnull=True)
     for m in madres_sin_parto:
         m.nombre_descifrado = m.get_nombre()
@@ -94,9 +102,7 @@ def dashboard(request):
 
 @login_required
 def madre_list(request):
-    """
-    Listado de madres
-    """
+    """Listado de madres"""
     madres = Madre.objects.all().order_by('-fecha_registro')
     
     # Agregar nombres descifrados para el template
@@ -110,9 +116,7 @@ def madre_list(request):
 
 @login_required
 def madre_create(request):
-    """
-    Crear nueva madre
-    """
+    """Crear nueva madre"""
     if request.method == 'POST':
         form = MadreForm(request.POST)
         if form.is_valid():
@@ -124,23 +128,26 @@ def madre_create(request):
                 accion='CREATE_MADRE',
                 tabla_afectada='Madre',
                 registro_id=madre.id,
-                detalles=f'Creada madre con ficha {madre.ficha_clinica_id}'
+                detalles=f'Madre registrada - Ficha: {madre.ficha_clinica_id}, Nombre: {madre.get_nombre()}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Madre registrada exitosamente')
-            return redirect('core:madre_list')
+            return redirect('core:dashboard')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = MadreForm()
     
-    context = {'form': form, 'title': 'Registrar Nueva Madre'}
+    context = {'form': form, 'title': 'Admisión de Madre'}
     return render(request, 'core/madre_form.html', context)
 
 
 @login_required
 def madre_update(request, pk):
-    """
-    Actualizar madre existente
-    """
+    """Actualizar madre existente"""
     madre = get_object_or_404(Madre, pk=pk)
     
     if request.method == 'POST':
@@ -154,11 +161,16 @@ def madre_update(request, pk):
                 accion='UPDATE_MADRE',
                 tabla_afectada='Madre',
                 registro_id=madre.id,
-                detalles=f'Actualizada madre con ficha {madre.ficha_clinica_id}'
+                detalles=f'Madre actualizada - Ficha: {madre.ficha_clinica_id}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Madre actualizada exitosamente')
             return redirect('core:madre_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = MadreForm(instance=madre)
     
@@ -168,9 +180,7 @@ def madre_update(request, pk):
 
 @login_required
 def madre_detail(request, pk):
-    """
-    Detalle de madre
-    """
+    """Detalle de madre"""
     madre = get_object_or_404(Madre, pk=pk)
     madre.nombre_descifrado = madre.get_nombre()
     madre.rut_descifrado = madre.get_rut()
@@ -187,9 +197,7 @@ def madre_detail(request, pk):
 
 @login_required
 def parto_list(request):
-    """
-    Listado de partos
-    """
+    """Listado de partos"""
     if request.user.puede_ver_todos_partos:
         partos = Parto.objects.all()
     else:
@@ -207,9 +215,7 @@ def parto_list(request):
 
 @login_required
 def parto_create(request):
-    """
-    Crear nuevo parto
-    """
+    """Crear nuevo parto"""
     if not request.user.puede_crear_partos:
         messages.error(request, 'No tienes permiso para crear registros de parto')
         return redirect('core:dashboard')
@@ -225,11 +231,16 @@ def parto_create(request):
                 accion='CREATE_PARTO',
                 tabla_afectada='Parto',
                 registro_id=parto.id,
-                detalles=f'Creado parto {parto.tipo_parto} - {parto.fecha_parto}'
+                detalles=f'Parto registrado - Tipo: {parto.tipo_parto}, Fecha: {parto.fecha_parto}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Parto registrado exitosamente')
-            return redirect('core:parto_list')
+            return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = PartoForm(user=request.user)
     
@@ -239,9 +250,7 @@ def parto_create(request):
 
 @login_required
 def parto_update(request, pk):
-    """
-    Actualizar parto existente
-    """
+    """Actualizar parto existente"""
     parto = get_object_or_404(Parto, pk=pk)
     
     # Verificar permisos
@@ -265,11 +274,16 @@ def parto_update(request, pk):
                 accion='UPDATE_PARTO',
                 tabla_afectada='Parto',
                 registro_id=parto.id,
-                detalles=f'Actualizado parto {parto.tipo_parto}'
+                detalles=f'Parto actualizado - Tipo: {parto.tipo_parto}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Parto actualizado exitosamente')
-            return redirect('core:parto_list')
+            return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = PartoForm(instance=parto, user=request.user)
     
@@ -279,9 +293,7 @@ def parto_update(request, pk):
 
 @login_required
 def parto_detail(request, pk):
-    """
-    Detalle de parto con recién nacidos
-    """
+    """Detalle de parto con recién nacidos"""
     parto = get_object_or_404(Parto, pk=pk)
     
     # Verificar permisos
@@ -290,9 +302,15 @@ def parto_detail(request, pk):
         return redirect('core:parto_list')
     
     parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
     recien_nacidos = parto.recien_nacidos.all()
+    correcciones = parto.correcciones.all().order_by('-fecha_correccion')
     
-    context = {'parto': parto, 'recien_nacidos': recien_nacidos}
+    context = {
+        'parto': parto,
+        'recien_nacidos': recien_nacidos,
+        'correcciones': correcciones
+    }
     return render(request, 'core/parto_detail.html', context)
 
 
@@ -300,19 +318,25 @@ def parto_detail(request, pk):
 
 @login_required
 def recien_nacido_create(request, parto_pk):
-    """
-    Crear nuevo recién nacido asociado a un parto
-    """
+    """Crear nuevo recién nacido asociado a un parto"""
     parto = get_object_or_404(Parto, pk=parto_pk)
     
     if not request.user.puede_crear_partos:
         messages.error(request, 'No tienes permiso para registrar recién nacidos')
         return redirect('core:parto_detail', pk=parto_pk)
     
+    # Verificar que el usuario pueda acceder a este parto
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tienes permiso para acceder a este parto')
+        return redirect('core:dashboard')
+    
     if request.method == 'POST':
         form = RecienNacidoForm(request.POST, user=request.user)
         if form.is_valid():
-            recien_nacido = form.save()
+            recien_nacido = form.save(commit=False)
+            recien_nacido.parto = parto
+            recien_nacido.usuario_registro = request.user
+            recien_nacido.save()
             
             # Registrar en auditoría
             LogAuditoria.registrar(
@@ -320,15 +344,20 @@ def recien_nacido_create(request, parto_pk):
                 accion='CREATE_RECIEN_NACIDO',
                 tabla_afectada='RecienNacido',
                 registro_id=recien_nacido.id,
-                detalles=f'Registrado RN del parto {parto.id}'
+                detalles=f'RN registrado - Parto: {parto.id}, Peso: {recien_nacido.peso_gramos}g, APGAR: {recien_nacido.apgar_1_min}/{recien_nacido.apgar_5_min}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Recién nacido registrado exitosamente')
             return redirect('core:parto_detail', pk=parto_pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = RecienNacidoForm(user=request.user, initial={'parto': parto})
         # Hacer que el campo parto esté deshabilitado
-        form.fields['parto'].widget.attrs['readonly'] = True
+        form.fields['parto'].widget.attrs['disabled'] = True
     
     context = {'form': form, 'title': 'Registrar Recién Nacido', 'parto': parto}
     return render(request, 'core/recien_nacido_form.html', context)
@@ -336,14 +365,18 @@ def recien_nacido_create(request, parto_pk):
 
 @login_required
 def recien_nacido_update(request, pk):
-    """
-    Actualizar recién nacido
-    """
+    """Actualizar recién nacido"""
     recien_nacido = get_object_or_404(RecienNacido, pk=pk)
+    parto = recien_nacido.parto
     
     if not request.user.puede_editar_partos:
         messages.error(request, 'No tienes permiso para editar recién nacidos')
-        return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
+        return redirect('core:parto_detail', pk=parto.pk)
+    
+    # Verificar permisos sobre el parto
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tienes permiso para editar este registro')
+        return redirect('core:dashboard')
     
     if request.method == 'POST':
         form = RecienNacidoForm(request.POST, instance=recien_nacido, user=request.user)
@@ -356,26 +389,34 @@ def recien_nacido_update(request, pk):
                 accion='UPDATE_RECIEN_NACIDO',
                 tabla_afectada='RecienNacido',
                 registro_id=recien_nacido.id,
-                detalles=f'Actualizado RN {recien_nacido.id}'
+                detalles=f'RN actualizado - ID: {recien_nacido.id}',
+                ip=get_client_ip(request)
             )
             
             messages.success(request, 'Recién nacido actualizado exitosamente')
-            return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
+            return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = RecienNacidoForm(instance=recien_nacido, user=request.user)
-        form.fields['parto'].widget.attrs['readonly'] = True
+        form.fields['parto'].widget.attrs['disabled'] = True
     
-    context = {'form': form, 'title': 'Editar Recién Nacido', 'recien_nacido': recien_nacido}
+    context = {'form': form, 'title': 'Editar Recién Nacido', 'recien_nacido': recien_nacido, 'parto': parto}
     return render(request, 'core/recien_nacido_form.html', context)
+
+
+# ============= VISTAS DE CORRECCIÓN =============
 
 @login_required
 def anexar_correccion(request, pk):
+    """Anexar corrección a un parto (solo médicos)"""
     parto = get_object_or_404(Parto, pk=pk)
 
-    # Lógica de Permisos (de React: tienePermiso('anexarCorreccion'))
-    # Asumimos que "Médico" es el rol. Ajustar según tu modelo `Rol`.
-    if not request.user.rol.nombre == 'Médico':
-        messages.error(request, 'No tiene permisos para anexar correcciones.')
+    # Verificar permisos (solo médicos pueden anexar correcciones)
+    if not request.user.puede_anexar_correccion:
+        messages.error(request, 'No tiene permisos para anexar correcciones. Solo médicos pueden realizar esta acción.')
         return redirect('core:parto_detail', pk=parto.pk)
 
     if request.method == 'POST':
@@ -386,15 +427,22 @@ def anexar_correccion(request, pk):
             correccion.parto = parto
             correccion.save()
 
+            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='ANEXAR_CORRECCION',
                 tabla_afectada='Correccion',
                 registro_id=correccion.id,
-                detalles=f'Corrección en Parto {parto.id}: {correccion.campo_corregido} | Justificación: {correccion.justificacion}'
+                detalles=f'Corrección anexada - Parto: {parto.id}, Campo: {correccion.campo_corregido}, Justificación: {correccion.justificacion[:100]}',
+                ip=get_client_ip(request)
             )
-            messages.success(request, 'Corrección anexada exitosamente.')
+            
+            messages.success(request, 'Corrección anexada exitosamente. El registro original permanece intacto.')
             return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = CorreccionForm()
 
@@ -406,12 +454,16 @@ def anexar_correccion(request, pk):
     }
     return render(request, 'core/anexar_correccion_form.html', context)
 
+
+# ============= VISTAS DE EPICRISIS =============
+
 @login_required
 def crear_epicrisis(request, pk):
+    """Crear epicrisis e indicaciones (solo médicos)"""
     parto = get_object_or_404(Parto, pk=pk)
 
-    # Permiso (de React: tienePermiso('crearEpicrisis'))
-    if not request.user.rol.nombre == 'Médico':
+    # Verificar permisos (solo médicos pueden crear epicrisis)
+    if not request.user.puede_anexar_correccion:  # Usamos el mismo permiso de médico
         messages.error(request, 'Solo los médicos pueden crear epicrisis.')
         return redirect('core:parto_detail', pk=parto.pk)
 
@@ -422,14 +474,14 @@ def crear_epicrisis(request, pk):
         if form.is_valid() and formset.is_valid():
             # Guardar datos de epicrisis en el JSONField
             parto.epicrisis_data = {
-                'motivo_ingreso': form.cleaned_data.get('motivo_ingreso'),
-                'resumen_evolucion': form.cleaned_data.get('resumen_evolucion'),
-                'diagnostico_egreso': form.cleaned_data.get('diagnostico_egreso'),
-                'condicion_egreso': form.cleaned_data.get('condicion_egreso'),
-                'control_posterior': form.cleaned_data.get('control_posterior'),
-                'indicaciones_alta': form.cleaned_data.get('indicaciones_alta'),
-                'observaciones': form.cleaned_data.get('observaciones'),
-                'medico_id': request.user.pk,
+                'motivo_ingreso': form.cleaned_data.get('motivo_ingreso', ''),
+                'resumen_evolucion': form.cleaned_data.get('resumen_evolucion', ''),
+                'diagnostico_egreso': form.cleaned_data.get('diagnostico_egreso', ''),
+                'condicion_egreso': form.cleaned_data.get('condicion_egreso', ''),
+                'control_posterior': form.cleaned_data.get('control_posterior', ''),
+                'indicaciones_alta': form.cleaned_data.get('indicaciones_alta', ''),
+                'observaciones': form.cleaned_data.get('observaciones', ''),
+                'medico_id': str(request.user.pk),
                 'medico_nombre': request.user.nombre_completo,
                 'fecha_creacion': timezone.now().isoformat()
             }
@@ -438,11 +490,30 @@ def crear_epicrisis(request, pk):
             # Guardar el formset de indicaciones
             formset.save()
 
-            LogAuditoria.registrar(request.user, 'CREAR_EPICRISIS', 'Parto', parto.id, f"Epicrisis creada para {parto.madre.get_nombre()}")
-            messages.success(request, 'Epicrisis guardada exitosamente.')
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREAR_EPICRISIS',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f"Epicrisis creada para parto {parto.id} - Madre: {parto.madre.get_nombre()}",
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Epicrisis e indicaciones guardadas exitosamente.')
             return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+            for form_errors in formset.errors:
+                for field, errors in form_errors.items():
+                    for error in errors:
+                        messages.error(request, f'Indicación - {field}: {error}')
     else:
-        form = EpicrisisForm(initial=parto.epicrisis_data or {})
+        # Cargar datos existentes si ya hay epicrisis
+        initial_data = parto.epicrisis_data if parto.epicrisis_data else {}
+        form = EpicrisisForm(initial=initial_data)
         formset = IndicacionFormSet(instance=parto, prefix='indicaciones')
 
     context = {
