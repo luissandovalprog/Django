@@ -1,10 +1,23 @@
 """
 Formularios para la gestión de Madres, Partos y Recién Nacidos
 """
-
+import uuid
+from django.db import models
 from django import forms
-from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10
+from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, Indicacion
+from django.forms import inlineformset_factory
 
+class PartoForm(forms.ModelForm):
+    class Meta:
+        model = Parto
+        fields = ['madre', 'fecha_parto', 'edad_gestacional', 'tipo_parto', 'anestesia']
+        widgets = {
+            'madre': forms.Select(attrs={'class': 'select'}),
+            'fecha_parto': forms.DateTimeInput(attrs={'class': 'input', 'type': 'datetime-local'}),
+            'edad_gestacional': forms.NumberInput(attrs={'class': 'input', 'min': '20', 'max': '45'}),
+            'tipo_parto': forms.Select(attrs={'class': 'select'}),
+            'anestesia': forms.Select(attrs={'class': 'select'}),
+        }
 
 class MadreForm(forms.ModelForm):
     """
@@ -149,6 +162,26 @@ class PartoForm(forms.ModelForm):
             self.save_m2m()
         return instance
 
+class RecienNacidoForm(forms.ModelForm):
+    class Meta:
+        model = RecienNacido
+        fields = [
+            'parto', 'rut_provisorio', 'estado_al_nacer', 'sexo', 
+            'peso_gramos', 'talla_cm', 'apgar_1_min', 'apgar_5_min',
+            'profilaxis_vit_k', 'profilaxis_oftalmica'
+        ]
+        widgets = {
+            'parto': forms.Select(attrs={'class': 'select'}),
+            'rut_provisorio': forms.TextInput(attrs={'class': 'input'}),
+            'estado_al_nacer': forms.Select(attrs={'class': 'select'}),
+            'sexo': forms.Select(attrs={'class': 'select'}),
+            'peso_gramos': forms.NumberInput(attrs={'class': 'input', 'min': '500', 'max': '6000'}),
+            'talla_cm': forms.NumberInput(attrs={'class': 'input', 'min': '25', 'max': '65', 'step': '0.1'}),
+            'apgar_1_min': forms.NumberInput(attrs={'class': 'input', 'min': '0', 'max': '10'}),
+            'apgar_5_min': forms.NumberInput(attrs={'class': 'input', 'min': '0', 'max': '10'}),
+            'profilaxis_vit_k': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded'}),
+            'profilaxis_oftalmica': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded'}),
+        }
 
 class RecienNacidoForm(forms.ModelForm):
     """
@@ -221,3 +254,69 @@ class RecienNacidoForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+class CorreccionForm(forms.ModelForm):
+    class Meta:
+        model = Correccion
+        fields = ['campo_corregido', 'valor_original', 'valor_nuevo', 'justificacion']
+        widgets = {
+            'campo_corregido': forms.Select(attrs={'class': 'select'}),
+            'valor_original': forms.TextInput(attrs={'class': 'input bg-gray-100', 'readonly': True}),
+            'valor_nuevo': forms.TextInput(attrs={'class': 'input border-green-500 border-2'}),
+            'justificacion': forms.Textarea(attrs={'class': 'textarea border-green-500 border-2', 'rows': 4, 'placeholder': 'Describa detalladamente el motivo... (mínimo 20 caracteres)'}),
+        }
+        labels = {
+            'campo_corregido': 'Campo a Corregir',
+            'valor_original': 'Valor Original (No se modificará)',
+            'valor_nuevo': 'Valor Corregido',
+            'justificacion': 'Justificación de la Corrección',
+        }
+
+    def clean_justificacion(self):
+        justificacion = self.cleaned_data.get('justificacion')
+        if len(justificacion) < 20:
+            raise forms.ValidationError('La justificación debe tener al menos 20 caracteres.')
+        return justificacion
+
+class EpicrisisForm(forms.ModelForm):
+    # Campos de Epicrisis que no son modelo, se guardarán en JSONField
+    motivo_ingreso = forms.CharField(label="Motivo de Ingreso", widget=forms.TextInput(attrs={'class': 'input'}), required=False)
+    resumen_evolucion = forms.CharField(label="Resumen de Evolución *", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 4}))
+    diagnostico_egreso = forms.CharField(label="Diagnóstico de Egreso *", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}))
+    condicion_egreso = forms.ChoiceField(
+        label="Condición al Egreso", 
+        choices=[('buena', 'Buena'), ('regular', 'Regular'), ('grave', 'Grave'), ('fallecido', 'Fallecido')],
+        widget=forms.Select(attrs={'class': 'select'})
+    )
+    control_posterior = forms.CharField(label="Control Posterior", widget=forms.TextInput(attrs={'class': 'input'}), required=False)
+    indicaciones_alta = forms.CharField(label="Indicaciones al Alta", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}), required=False)
+    observaciones = forms.CharField(label="Observaciones", widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 2}), required=False)
+
+    class Meta:
+        model = Parto
+        fields = []
+
+class IndicacionForm(forms.ModelForm):
+    class Meta:
+        model = Indicacion
+        fields = ['tipo', 'descripcion', 'dosis', 'via', 'frecuencia']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'select'}),
+            'descripcion': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Paracetamol'}),
+            'dosis': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: 500mg'}),
+            'via': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Oral'}),
+            'frecuencia': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ej: Cada 8 horas'}),
+        }
+        labels = {
+            'descripcion': 'Descripción *',
+        }
+
+# Creamos el Formset
+IndicacionFormSet = inlineformset_factory(
+    Parto, 
+    Indicacion, 
+    form=IndicacionForm, 
+    extra=1, 
+    can_delete=True,
+    fk_name='parto'
+)

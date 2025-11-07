@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto animacion-entrada">
+    <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg">
+        <div class="flex items-start gap-3">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <div>
+                <p class="font-semibold">Anexar Corrección - Trazabilidad Completa</p>
+                <p class="text-sm mt-1">Esta acción NO sobrescribe el dato original. Se anexa una corrección que queda registrada en auditoría.</p>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ title }}</h2>
+
+    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 class="font-semibold text-blue-800">Información del Registro</h3>
+        <div class="grid grid-cols-2 gap-4 mt-2">
+            <div>
+                <p class="text-sm text-gray-600">Madre: <strong class="text-gray-900">{{ madre.get_nombre }}</strong> (RUT: {{ madre.get_rut }})</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Registrado por: <strong class="text-gray-900">{{ parto.usuario_registro.nombre_completo }}</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="tarjeta space-y-6">
+        {% csrf_token %}
+
+        <div>
+            <label for="{{ form.campo_corregido.id_for_label }}" class="etiqueta">{{ form.campo_corregido.label }} *</label>
+            {{ form.campo_corregido }}
+            {% if form.campo_corregido.errors %}<p class="mt-1 text-sm text-red-600">{{ form.campo_corregido.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+            <div>
+                <label for="{{ form.valor_original.id_for_label }}" class="etiqueta">{{ form.valor_original.label }}</label>
+                {{ form.valor_original }}
+                <p class="mt-1 text-xs text-gray-500">Este valor se autocompletará (próximamente).</p>
+            </div>
+            <div>
+                <label for="{{ form.valor_nuevo.id_for_label }}" class="etiqueta">{{ form.valor_nuevo.label }} *</label>
+                {{ form.valor_nuevo }}
+                {% if form.valor_nuevo.errors %}<p class="mt-1 text-sm text-red-600">{{ form.valor_nuevo.errors|join:", " }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.justificacion.id_for_label }}" class="etiqueta">{{ form.justificacion.label }} *</label>
+            {{ form.justificacion }}
+            {% if form.justificacion.errors %}<p class="mt-1 text-sm text-red-600">{{ form.justificacion.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3">
+            <a href="{% url 'core:parto_detail' parto.pk %}" class="boton boton-gris">Cancelar</a>
+            <button type="submit" class="boton boton-primario">
+                Anexar Corrección
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

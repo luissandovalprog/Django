@@ -1,57 +1,67 @@
-{% extends 'base.html' %}
+{% extends 'base_sin_nav.html' %}
 {% load static %}
 
 {% block title %}Iniciar Sesión{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center" style="margin-top: 80px;">
-        <div class="col-md-5">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white text-center">
-                    <h4>Sistema de Trazabilidad</h4>
-                    <p class="mb-0">Hospital Clínico Herminda Martín</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">Usuario</label>
-                            {{ form.username }}
-                            {% if form.username.errors %}
-                                <div class="text-danger">{{ form.username.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.password.id_for_label }}" class="form-label">Contraseña</label>
-                            {{ form.password }}
-                            {% if form.password.errors %}
-                                <div class="text-danger">{{ form.password.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Ingresar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center text-muted">
-                    <small>Departamento de Obstetricia y Recién Nacido</small>
-                </div>
+<div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 p-4">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
+        
+        <div class="p-8">
+            <div class="flex flex-col items-center mb-6">
+                <div class="flex items-center justify-center w-20 h-20 bg-blue-600 text-white rounded-full mb-4 shadow-lg">
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 32 32" fill="currentColor">
+                        <path d="M27.4,13.3c-1-3.2-3.4-5.8-6.4-7.2c-0.4-1.4-1.2-2.6-2.4-3.6c-0.4-0.3-1.1-0.3-1.4,0.2c-0.3,0.4-0.3,1.1,0.2,1.4 c2,1.6,2.6,4.4,1.4,6.7c-1,2-3.5,2.7-5.5,1.7c-1.5-0.8-2.1-2.6-1.3-4.1c0.3-0.5,0.7-0.9,1.3-1.1c0.6-0.2,1.2-0.1,1.7,0.2 c0.4,0.2,0.7,0.5,0.8,0.9c0.1,0.4,0.1,0.8-0.1,1.2c-0.3,0.5-0.1,1.1,0.4,1.4c0.5,0.3,1.1,0.1,1.4-0.4c0.4-0.8,0.5-1.8,0.3-2.7 s-0.9-1.7-1.8-2.1c-1-0.5-2.2-0.6-3.2-0.3c-0.4,0.1-0.8,0.3-1.1,0.6c-3.3,1.3-5.8,4-6.9,7.4C3.1,13.8,2,15.3,2,17 c0,1.7,1.1,3.2,2.6,3.8C6.2,25.6,10.8,29,16,29s9.8-3.4,11.4-8.3c1.5-0.6,2.6-2.1,2.6-3.8C30,15.3,28.9,13.8,27.4,13.3z M12,16 c0-0.6,0.4-1,1-1s1,0.4,1,1v2c0,0.6-0.4,1-1,1s-1-0.4-1-1V16z M15,26c-1.7,0-3-1.3-3-3s1.3-3,3-3s3,1.3,3,3S16.7,26,15,26z M20,18 c0,0.6-0.4,1-1,1s-1-0.4-1-1v-2c0-0.6,0.4-1,1-1s1,0.4,1,1V18z"></path>
+                    </svg>
+                    </div>
+                <h1 class="text-2xl font-bold text-gray-900">SIGN - Sistema de Partos</h1>
+                <p class="text-gray-600">Hospital Clínico Herminda Martín</p>
             </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-3 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if form.errors %}
+            <div class="mb-4 p-3 rounded-md text-sm bg-red-100 text-red-800">
+                Usuario o contraseña incorrectos.
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:login' %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="etiqueta">Usuario</label>
+                    {{ form.username }}
+                </div>
+                
+                <div>
+                    <label for="{{ form.password.id_for_label }}" class="etiqueta">Contraseña</label>
+                    {{ form.password }}
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" class="boton boton-primario w-full justify-center py-3">
+                        Ingresar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="px-8 py-4 bg-gray-50 text-center border-t border-gray-100">
+            <small class="text-gray-500">Departamento de Obstetricia y Recién Nacido</small>
         </div>
     </div>
 </div>
 
 <style>
-    body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-    }
-    .form-control {
-        padding: 0.75rem;
+    #id_username, #id_password {
+        @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
     }
 </style>
 {% endblock %}

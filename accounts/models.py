@@ -3,10 +3,10 @@ Modelos de la aplicación Accounts
 Sistema de autenticación con RBAC
 """
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, AbstractUser
 from django.db import models
 import uuid
-
+from django.utils.translation import gettext_lazy as _
 
 class Rol(models.Model):
     """
@@ -20,9 +20,10 @@ class Rol(models.Model):
     puede_crear_partos = models.BooleanField(default=False)
     puede_editar_partos = models.BooleanField(default=False)
     puede_eliminar_partos = models.BooleanField(default=False)
-    puede_ver_todos_partos = models.BooleanField(default=False)
+    puede_ver_todos_partos = models.BooleanField(default=False, help_text="Si no está marcado, solo ve sus propios registros (ej. Matrona)")
     puede_generar_reportes = models.BooleanField(default=False)
     puede_gestionar_usuarios = models.BooleanField(default=False)
+    puede_anexar_correccion = models.BooleanField(default=False, help_text="Permiso para anexar correcciones (ej. Médico)")
     
     class Meta:
         db_table = 'Rol'
@@ -121,6 +122,18 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def puede_eliminar_partos(self):
         return self.rol.puede_eliminar_partos if self.rol else False
     
+    @property
+    def puede_ver_todos_partos(self):
+        if self.is_superuser:
+            return True
+        return self.rol and self.rol.puede_ver_todos_partos
+    
+    @property
+    def puede_anexar_correccion(self):
+        if self.is_superuser:
+            return True
+        return self.rol and self.rol.puede_anexar_correccion
+
     @property
     def puede_ver_todos_partos(self):
         return self.rol.puede_ver_todos_partos if self.rol else False

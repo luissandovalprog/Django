@@ -284,3 +284,60 @@ class DocumentoReferencia(models.Model):
     
     def __str__(self):
         return f"{self.nombre_archivo} - {self.tipo_documento}"
+
+class Correccion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parto = models.ForeignKey(Parto, on_delete=models.PROTECT, related_name='correcciones')
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='correcciones_realizadas'
+    )
+    fecha_correccion = models.DateTimeField(auto_now_add=True)
+
+    CAMPO_CHOICES = [
+        ('tipo_parto', 'Tipo de Parto'),
+        ('peso_gramos', 'Peso RN (g)'),
+        ('talla_cm', 'Talla RN (cm)'),
+        ('apgar_1_min', 'APGAR 1 min'),
+        ('apgar_5_min', 'APGAR 5 min'),
+        ('observaciones', 'Observaciones'),
+        ('otro', 'Otro'),
+    ]
+    campo_corregido = models.CharField(max_length=100, choices=CAMPO_CHOICES)
+    valor_original = models.TextField(blank=True)
+    valor_nuevo = models.TextField()
+    justificacion = models.TextField()
+
+    class Meta:
+        db_table = 'Correccion'
+        ordering = ['-fecha_correccion']
+        verbose_name = 'Corrección de Registro'
+        verbose_name_plural = 'Correcciones de Registros'
+
+    def __str__(self):
+        return f"Corrección en {self.parto_id} por {self.usuario.username}"
+    
+class Indicacion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parto = models.ForeignKey(Parto, on_delete=models.CASCADE, related_name='indicaciones')
+
+    TIPO_CHOICES = [
+        ('medicamento', 'Medicamento'),
+        ('procedimiento', 'Procedimiento'),
+        ('cuidado', 'Cuidado de Enfermería'),
+        ('dieta', 'Dieta'),
+        ('reposo', 'Reposo'),
+    ]
+    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
+    descripcion = models.CharField(max_length=255)
+    dosis = models.CharField(max_length=100, blank=True, null=True)
+    via = models.CharField(max_length=100, blank=True, null=True)
+    frecuencia = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        db_table = 'Indicacion'
+        ordering = ['-parto__fecha_parto']
+
+    def __str__(self):
+        return f"Indicación ({self.tipo}) para Parto {self.parto.id}"

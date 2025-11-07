@@ -11,36 +11,82 @@ from datetime import datetime, timedelta
 from .models import Madre, Parto, RecienNacido
 from .forms import MadreForm, PartoForm, RecienNacidoForm
 from auditoria.models import LogAuditoria
-
+from .forms import CorreccionForm
+from .models import Correccion
+from .forms import EpicrisisForm, IndicacionFormSet
+from utils.crypto import crypto_service
+from django.utils import timezone
 
 @login_required
 def dashboard(request):
     """
-    Dashboard principal con estadísticas
+    Dashboard principal con estadísticas y filtrado (migrado de React)
     """
-    # Estadísticas generales
-    total_madres = Madre.objects.count()
-    total_partos = Parto.objects.count()
-    total_recien_nacidos = RecienNacido.objects.count()
-    
-    # Partos del mes actual
+    busqueda_query = request.GET.get('busqueda', '')
+
+    # Lógica de filtrado base (React: perteneceATurno)
+    madres_qs = Madre.objects.all()
+    partos_qs = Parto.objects.select_related('madre', 'usuario_registro')
+
+    # Lógica de permisos de React
+    if not request.user.puede_ver_todos_partos:
+        # Filtra partos y madres por el usuario (Matrona/Enfermera por turno)
+        # NOTA: El modelo Django actual filtra por 'usuario_registro'. 
+        # El modelo React filtra por 'turno'. 
+        # Asumiremos 'usuario_registro' como la lógica de negocio final.
+        partos_qs = partos_qs.filter(usuario_registro=request.user)
+        madres_qs = madres_qs.filter(partos__usuario_registro=request.user).distinct()
+
+    # Lógica de búsqueda (React: busqueda)
+    if busqueda_query:
+        partos_qs = partos_qs.filter(
+            Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) | # Asumiendo búsqueda por RUT hasheado
+            Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) | # Asumiendo búsqueda por Nombre hasheado
+            Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
+        ).distinct()
+
+        madres_qs = madres_qs.filter(
+            Q(rut_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(nombre_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(ficha_clinica_id__icontains=busqueda_query)
+        ).distinct()
+
+    # Lógica de estadísticas (React: useMemo)
+    total_madres = madres_qs.count()
+    total_partos = partos_qs.count()
+
     mes_actual = datetime.now().replace(day=1)
-    partos_mes = Parto.objects.filter(fecha_parto__gte=mes_actual).count()
-    
-    # Últimos partos (limitado según permiso del usuario)
-    if request.user.puede_ver_todos_partos:
-        ultimos_partos = Parto.objects.all()[:10]
-    else:
-        ultimos_partos = Parto.objects.filter(usuario_registro=request.user)[:10]
-    
+    partos_mes = partos_qs.filter(fecha_parto__gte=mes_actual).count()
+
+    # Lógica de "Partos Hoy" (React: partosHoy)
+    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0)
+    hoy_fin = hoy_inicio + timedelta(days=1)
+    partos_hoy = partos_qs.filter(fecha_parto__gte=hoy_inicio, fecha_parto__lt=hoy_fin).count()
+
+    # Lógica de "Recién Nacidos"
+    total_recien_nacidos = RecienNacido.objects.filter(parto__in=partos_qs).count()
+
+    # Lógica de "Últimos partos" (React: partosRecientes)
+    ultimos_partos = partos_qs.order_by('-fecha_parto')[:10]
+    for p in ultimos_partos:
+        p.madre.nombre_descifrado = p.madre.get_nombre()
+
+    # Lógica de "Madres sin parto" (React)
+    madres_sin_parto = madres_qs.filter(partos__isnull=True)
+    for m in madres_sin_parto:
+        m.nombre_descifrado = m.get_nombre()
+
     context = {
         'total_madres': total_madres,
         'total_partos': total_partos,
         'total_recien_nacidos': total_recien_nacidos,
         'partos_mes': partos_mes,
+        'partos_hoy': partos_hoy,
         'ultimos_partos': ultimos_partos,
+        'madres_sin_parto': madres_sin_parto,
+        'busqueda_query': busqueda_query,
     }
-    
+
     return render(request, 'core/dashboard.html', context)
 
 
@@ -321,3 +367,89 @@ def recien_nacido_update(request, pk):
     
     context = {'form': form, 'title': 'Editar Recién Nacido', 'recien_nacido': recien_nacido}
     return render(request, 'core/recien_nacido_form.html', context)
+
+@login_required
+def anexar_correccion(request, pk):
+    parto = get_object_or_404(Parto, pk=pk)
+
+    # Lógica de Permisos (de React: tienePermiso('anexarCorreccion'))
+    # Asumimos que "Médico" es el rol. Ajustar según tu modelo `Rol`.
+    if not request.user.rol.nombre == 'Médico':
+        messages.error(request, 'No tiene permisos para anexar correcciones.')
+        return redirect('core:parto_detail', pk=parto.pk)
+
+    if request.method == 'POST':
+        form = CorreccionForm(request.POST)
+        if form.is_valid():
+            correccion = form.save(commit=False)
+            correccion.usuario = request.user
+            correccion.parto = parto
+            correccion.save()
+
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='ANEXAR_CORRECCION',
+                tabla_afectada='Correccion',
+                registro_id=correccion.id,
+                detalles=f'Corrección en Parto {parto.id}: {correccion.campo_corregido} | Justificación: {correccion.justificacion}'
+            )
+            messages.success(request, 'Corrección anexada exitosamente.')
+            return redirect('core:parto_detail', pk=parto.pk)
+    else:
+        form = CorreccionForm()
+
+    context = {
+        'form': form,
+        'parto': parto,
+        'madre': parto.madre,
+        'title': 'Anexar Corrección de Registro'
+    }
+    return render(request, 'core/anexar_correccion_form.html', context)
+
+@login_required
+def crear_epicrisis(request, pk):
+    parto = get_object_or_404(Parto, pk=pk)
+
+    # Permiso (de React: tienePermiso('crearEpicrisis'))
+    if not request.user.rol.nombre == 'Médico':
+        messages.error(request, 'Solo los médicos pueden crear epicrisis.')
+        return redirect('core:parto_detail', pk=parto.pk)
+
+    if request.method == 'POST':
+        form = EpicrisisForm(request.POST)
+        formset = IndicacionFormSet(request.POST, instance=parto, prefix='indicaciones')
+
+        if form.is_valid() and formset.is_valid():
+            # Guardar datos de epicrisis en el JSONField
+            parto.epicrisis_data = {
+                'motivo_ingreso': form.cleaned_data.get('motivo_ingreso'),
+                'resumen_evolucion': form.cleaned_data.get('resumen_evolucion'),
+                'diagnostico_egreso': form.cleaned_data.get('diagnostico_egreso'),
+                'condicion_egreso': form.cleaned_data.get('condicion_egreso'),
+                'control_posterior': form.cleaned_data.get('control_posterior'),
+                'indicaciones_alta': form.cleaned_data.get('indicaciones_alta'),
+                'observaciones': form.cleaned_data.get('observaciones'),
+                'medico_id': request.user.pk,
+                'medico_nombre': request.user.nombre_completo,
+                'fecha_creacion': timezone.now().isoformat()
+            }
+            parto.save()
+
+            # Guardar el formset de indicaciones
+            formset.save()
+
+            LogAuditoria.registrar(request.user, 'CREAR_EPICRISIS', 'Parto', parto.id, f"Epicrisis creada para {parto.madre.get_nombre()}")
+            messages.success(request, 'Epicrisis guardada exitosamente.')
+            return redirect('core:parto_detail', pk=parto.pk)
+    else:
+        form = EpicrisisForm(initial=parto.epicrisis_data or {})
+        formset = IndicacionFormSet(instance=parto, prefix='indicaciones')
+
+    context = {
+        'form': form,
+        'formset': formset,
+        'parto': parto,
+        'madre': parto.madre,
+        'title': 'Epicrisis e Indicaciones Médicas'
+    }
+    return render(request, 'core/epicrisis_form.html', context)

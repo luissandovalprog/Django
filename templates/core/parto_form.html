@@ -1,68 +1,69 @@
 {% extends 'base.html' %}
-
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2>{{ title }}</h2>
-    </div>
-</div>
+<div class="max-w-4xl mx-auto animacion-entrada">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">{{ title }}</h2>
 
-<div class="card">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">{{ form.madre.label }}</label>
-                    {{ form.madre }}
-                    {% if form.madre.errors %}
-                        <div class="text-danger">{{ form.madre.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">{{ form.fecha_parto.label }}</label>
-                    {{ form.fecha_parto }}
-                    {% if form.fecha_parto.errors %}
-                        <div class="text-danger">{{ form.fecha_parto.errors }}</div>
-                    {% endif %}
+    <form method="post" class="tarjeta space-y-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="p-3 bg-red-100 text-red-800 rounded-lg">...</div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="{{ form.madre.id_for_label }}" class="etiqueta">{{ form.madre.label }} *</label>
+                {{ form.madre }}
+                {% if form.madre.errors %}<p class="mt-1 text-sm text-red-600">{{ form.madre.errors|join:", " }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.fecha_parto.id_for_label }}" class="etiqueta">{{ form.fecha_parto.label }} *</label>
+                {{ form.fecha_parto }}
+                {% if form.fecha_parto.errors %}<p class="mt-1 text-sm text-red-600">{{ form.fecha_parto.errors|join:", " }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label for="{{ form.tipo_parto.id_for_label }}" class="etiqueta">{{ form.tipo_parto.label }} *</label>
+                {{ form.tipo_parto }}
+                {% if form.tipo_parto.errors %}<p class="mt-1 text-sm text-red-600">{{ form.tipo_parto.errors|join:", " }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.anestesia.id_for_label }}" class="etiqueta">{{ form.anestesia.label }}</label>
+                {{ form.anestesia }}
+                {% if form.anestesia.errors %}<p class="mt-1 text-sm text-red-600">{{ form.anestesia.errors|join:", " }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.edad_gestacional.id_for_label }}" class="etiqueta">{{ form.edad_gestacional.label }}</label>
+                {{ form.edad_gestacional }}
+                {% if form.edad_gestacional.errors %}<p class="mt-1 text-sm text-red-600">{{ form.edad_gestacional.errors|join:", " }}</p>{% endif %}
+            </div>
+        </div>
+
+        {% if parto %}
+        <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg">
+            <div class="flex items-center gap-3">
+                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div>
+                    <p class="font-semibold">Ventana de Edición</p>
+                    <p class="text-sm">Tiempo restante para editar: {{ tiempo_restante|timeuntil }}</p>
                 </div>
             </div>
-            
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">{{ form.tipo_parto.label }}</label>
-                    {{ form.tipo_parto }}
-                    {% if form.tipo_parto.errors %}
-                        <div class="text-danger">{{ form.tipo_parto.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">{{ form.anestesia.label }}</label>
-                    {{ form.anestesia }}
-                    {% if form.anestesia.errors %}
-                        <div class="text-danger">{{ form.anestesia.errors }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">{{ form.edad_gestacional.label }}</label>
-                    {{ form.edad_gestacional }}
-                    {% if form.edad_gestacional.errors %}
-                        <div class="text-danger">{{ form.edad_gestacional.errors }}</div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'core:parto_list' %}" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
-    </div>
+        </div>
+        {% endif %}
+
+        <div class="pt-4 flex justify-end gap-3">
+            <a href="{% url 'core:parto_list' %}" class="boton boton-gris">Cancelar</a>
+            <button type="submit" class="boton boton-primario">
+                Guardar
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}

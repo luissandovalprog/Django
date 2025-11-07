@@ -4,13 +4,16 @@ Generación de REM BS22 y exportación a Excel
 """
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from datetime import datetime
 from core.models import Parto, RecienNacido, Madre
 from auditoria.models import LogAuditoria
 import csv
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from utils.pdf_utils import render_to_pdf
 
 
 @login_required
@@ -264,3 +267,44 @@ def exportar_excel(request):
         return response
     
     return render(request, 'reportes/exportar_form.html')
+
+@login_required
+def generar_brazalete_pdf(request, pk):
+    parto = get_object_or_404(Parto, pk=pk)
+    madre = parto.madre
+    rn = parto.recien_nacidos.first() # Asumiendo un RN
+
+    if not rn:
+        messages.error(request, 'Este parto aún no tiene un recién nacido registrado.')
+        return redirect('core:parto_detail', pk=parto.pk)
+
+    # (React: tienePermiso('generarBrazalete'))
+    # Usamos el permiso del modelo Rol de Django
+    if not request.user.puede_crear_partos: 
+        messages.error(request, 'No tiene permisos para generar brazaletes.')
+        return redirect('core:parto_detail', pk=parto.pk)
+
+    context = {
+        'parto': parto,
+        'madre': madre,
+        'rn': rn
+    }
+
+    pdf_response = render_to_pdf('reportes/pdf_brazalete.html', context)
+    
+    if not pdf_response:
+        messages.error(request, 'Hubo un error al generar el documento PDF.')
+        return redirect('core:parto_detail', pk=parto.pk)
+    # --- FIN NUEVA LÓGICA ---
+
+    # Asignamos el nombre al archivo
+    nombre_archivo = f'brazalete-{rn.rut_provisorio or rn.id}.pdf'
+    pdf_response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    
+    LogAuditoria.registrar(
+        usuario=request.user,
+        accion='GENERAR_PDF_BRAZALETE',
+        tabla_afectada='Parto',
+        registro_id=parto.id
+    )
+    return pdf_response

@@ -3,12 +3,14 @@ Vistas de autenticación
 """
 
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from auditoria.models import LogAuditoria
-
+from django.contrib.auth.decorators import user_passes_test
+from .models import Usuario
+from .forms import CustomUsuarioCreationForm, CustomUsuarioChangeForm
 
 def login_view(request):
     """
@@ -69,3 +71,44 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+def es_admin_sistema(user):
+    return user.is_authenticated and user.puede_gestionar_usuarios
+
+@user_passes_test(es_admin_sistema)
+def gestion_usuarios(request):
+    usuarios = Usuario.objects.all().order_by('nombre_completo')
+    context = {'usuarios': usuarios}
+    return render(request, 'accounts/gestion_usuarios.html', context)
+
+@user_passes_test(es_admin_sistema)
+def crear_usuario(request):
+    if request.method == 'POST':
+        form = CustomUsuarioCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            LogAuditoria.registrar(request.user, 'CREAR_USUARIO', 'Usuario', user.id, f"Creado usuario {user.username}")
+            messages.success(request, f'Usuario {user.username} creado.')
+            return redirect('accounts:gestion_usuarios')
+    else:
+        form = CustomUsuarioCreationForm()
+
+    context = {'form': form, 'title': 'Crear Nuevo Usuario'}
+    return render(request, 'accounts/usuario_form.html', context)
+
+@user_passes_test(es_admin_sistema)
+def editar_usuario(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    if request.method == 'POST':
+        form = CustomUsuarioChangeForm(request.POST, instance=usuario)
+        if form.is_valid():
+            user = form.save()
+            LogAuditoria.registrar(request.user, 'MODIFICAR_USUARIO', 'Usuario', user.id, f"Editado usuario {user.username}")
+            messages.success(request, f'Usuario {user.username} actualizado.')
+            return redirect('accounts:gestion_usuarios')
+    else:
+        form = CustomUsuarioChangeForm(instance=usuario)
+
+    context = {'form': form, 'title': 'Editar Usuario'}
+    return render(request, 'accounts/usuario_form.html', context)

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Brazalete {{ rn.rut_provisorio }}</title>
+    <style>
+        /* Estilos CSS puros para WeasyPrint (Tailwind no funciona aquí) */
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Helvetica', sans-serif; margin: 0; padding: 0; }
+        .header { background-color: #1d4ed8; color: white; padding: 20mm; text-align: center; }
+        .header h1 { font-size: 24pt; margin: 0; }
+        .header p { font-size: 14pt; margin: 5mm 0 0; }
+        .content { padding: 20mm; }
+        h2 { font-size: 18pt; color: #1d4ed8; border-bottom: 2px solid #1d4ed8; padding-bottom: 2mm; }
+        .info p { font-size: 12pt; line-height: 1.6; }
+        .info strong { font-weight: bold; min-width: 100px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HOSPITAL CLÍNICO HERMINDA MARTÍN</h1>
+        <p>BRAZALETE DE IDENTIFICACIÓN</p>
+    </div>
+    <div class="content">
+        <h2>RECIÉN NACIDO</h2>
+        <div class="info">
+            <p><strong>ID:</strong> {{ rn.rut_provisorio }}</p>
+            <p><strong>Fecha:</strong> {{ parto.fecha_parto|date:"d/m/Y" }}</p>
+            <p><strong>Hora:</strong> {{ parto.fecha_parto|time:"H:i" }}</p>
+            <p><strong>Peso:</strong> {{ rn.peso_gramos }}g</p>
+            <p><strong>Talla:</strong> {{ rn.talla_cm }} cm</p>
+            <p><strong>APGAR:</strong> {{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}</p>
+        </div>
+
+        <h2 style="margin-top: 15mm;">MADRE</h2>
+        <div class="info">
+            <p><strong>Nombre:</strong> {{ madre.get_nombre }}</p>
+            <p><strong>RUT:</strong> {{ madre.get_rut }}</p>
+            <p><strong>Teléfono:</strong> {{ madre.get_telefono|default_if_none:'' }}</p>
+            <p><strong>Previsión:</strong> {{ madre.prevision }}</p>
+        </div>
+    </div>
+</body>
+</html>

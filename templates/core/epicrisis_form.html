@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-4xl mx-auto animacion-entrada space-y-6">
+    {% csrf_token %}
+
+    <div class="tarjeta">
+        <h2 class="text-2xl font-bold mb-4">Epicrisis e Indicaciones Médicas</h2>
+        <div class="p-4 bg-blue-50 rounded-lg">
+            <p class="text-sm font-medium text-gray-500">Paciente</p>
+            <p class="font-semibold text-lg text-blue-800">{{ madre.get_nombre }}</p>
+            <p class="text-sm text-gray-600">RUT: {{ madre.get_rut }}</p>
+        </div>
+    </div>
+
+    <div class="tarjeta space-y-4">
+        <h3 class="text-xl font-bold text-gray-800">Epicrisis</h3>
+        <div>
+            <label class="etiqueta" for="{{ form.resumen_evolucion.id_for_label }}">{{ form.resumen_evolucion.label }}</label>
+            {{ form.resumen_evolucion }}
+            {% if form.resumen_evolucion.errors %}<p class="mt-1 text-sm text-red-600">{{ form.resumen_evolucion.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div>
+            <label class="etiqueta" for="{{ form.diagnostico_egreso.id_for_label }}">{{ form.diagnostico_egreso.label }}</label>
+            {{ form.diagnostico_egreso }}
+            {% if form.diagnostico_egreso.errors %}<p class="mt-1 text-sm text-red-600">{{ form.diagnostico_egreso.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="etiqueta" for="{{ form.condicion_egreso.id_for_label }}">{{ form.condicion_egreso.label }}</label>
+                {{ form.condicion_egreso }}
+            </div>
+            <div>
+                <label class="etiqueta" for="{{ form.control_posterior.id_for_label }}">{{ form.control_posterior.label }}</label>
+                {{ form.control_posterior }}
+            </div>
+        </div>
+        <div>
+            <label class="etiqueta" for="{{ form.indicaciones_alta.id_for_label }}">{{ form.indicaciones_alta.label }}</label>
+            {{ form.indicaciones_alta }}
+        </div>
+    </div>
+
+    <div class="tarjeta space-y-4">
+        <h3 class="text-xl font-bold text-green-700">Indicaciones Médicas</h3>
+
+        {{ formset.management_form }}
+        <div id="indicaciones-formset" class="space-y-4">
+            {% for form in formset %}
+            <div class="formset-row p-4 border border-gray-200 rounded-lg space-y-3">
+                {{ form.id }}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="etiqueta" for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }}</label>
+                        {{ form.tipo }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion }}
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="etiqueta" for="{{ form.dosis.id_for_label }}">{{ form.dosis.label }}</label>
+                        {{ form.dosis }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ form.via.id_for_label }}">{{ form.via.label }}</label>
+                        {{ form.via }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ form.frecuencia.id_for_label }}">{{ form.frecuencia.label }}</label>
+                        {{ form.frecuencia }}
+                    </div>
+                </div>
+                {% if form.instance.pk %}
+                <div class="flex items-center">
+                    {{ form.DELETE }}
+                    <label for="{{ form.DELETE.id_for_label }}" class="ml-2 text-sm text-red-600">Eliminar</label>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div id="empty-form" class="hidden">
+            <div class="formset-row p-4 border border-gray-200 rounded-lg space-y-3">
+                {{ formset.empty_form.id }}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="etiqueta" for="{{ formset.empty_form.tipo.id_for_label }}">{{ formset.empty_form.tipo.label }}</label>
+                        {{ formset.empty_form.tipo }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ formset.empty_form.descripcion.id_for_label }}">{{ formset.empty_form.descripcion.label }}</label>
+                        {{ formset.empty_form.descripcion }}
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="etiqueta" for="{{ formset.empty_form.dosis.id_for_label }}">{{ formset.empty_form.dosis.label }}</label>
+                        {{ formset.empty_form.dosis }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ formset.empty_form.via.id_for_label }}">{{ formset.empty_form.via.label }}</label>
+                        {{ formset.empty_form.via }}
+                    </div>
+                    <div>
+                        <label class="etiqueta" for="{{ formset.empty_form.frecuencia.id_for_label }}">{{ formset.empty_form.frecuencia.label }}</label>
+                        {{ formset.empty_form.frecuencia }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" id="add-form" class="boton boton-secundario !bg-green-100 !text-green-800 hover:!bg-green-200">
+            + Agregar Indicación
+        </button>
+    </div>
+
+    <div class="flex justify-end gap-3">
+        <a href="{% url 'core:parto_detail' parto.pk %}" class="boton boton-gris">Cancelar</a>
+        <button type="submit" class="boton boton-primario">
+            Guardar Epicrisis e Indicaciones
+        </button>
+    </div>
+</form>
+
+{% block extra_js %}
+<script>
+    // Script para manejar el Formset (React: agregarIndicacion)
+    document.addEventListener('DOMContentLoaded', () => {
+        const formsetContainer = document.getElementById('indicaciones-formset');
+        const addButton = document.getElementById('add-form');
+        const totalForms = document.getElementById('id_indicaciones-TOTAL_FORMS');
+        const emptyFormTemplate = document.getElementById('empty-form').innerHTML;
+
+        addButton.addEventListener('click', () => {
+            const newFormIdx = parseInt(totalForms.value);
+            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, newFormIdx);
+
+            const newFormElement = document.createElement('div');
+            newFormElement.innerHTML = newFormHtml;
+            formsetContainer.appendChild(newFormElement.firstElementChild);
+
+            totalForms.value = newFormIdx + 1;
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

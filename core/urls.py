@@ -26,4 +26,10 @@ urlpatterns = [
     # Recién Nacido URLs
     path('parto/<uuid:parto_pk>/recien-nacido/crear/', views.recien_nacido_create, name='recien_nacido_create'),
     path('recien-nacido/<uuid:pk>/editar/', views.recien_nacido_update, name='recien_nacido_update'),
+
+    # Corrección URLs
+    path('parto/<uuid:pk>/corregir/', views.anexar_correccion, name='anexar_correccion'),
+
+    # Epicrisis URLs
+    path('parto/<uuid:pk>/epicrisis/', views.crear_epicrisis, name='crear_epicrisis'),
 ]
