@@ -2,117 +2,156 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto animacion-entrada">
-    <h2 class="text-3xl font-bold text-gray-900 mb-6">{{ title }}</h2>
+<div class="form-container" style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <h2 class="card-header">Admisión de Madre</h2>
 
-    <form method="post" class="tarjeta space-y-6">
-        {% csrf_token %}
+        <form method="post">
+            {% csrf_token %}
 
-        {% if form.non_field_errors %}
-        <div class="p-3 bg-red-100 text-red-800 rounded-lg">
-            {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="{{ form.rut.id_for_label }}" class="etiqueta">{{ form.rut.label }} *</label>
-                {{ form.rut }}
-                {% if form.rut.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.rut.errors|join:", " }}</p>
-                {% endif %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
             </div>
-
-            <div>
-                <label for="{{ form.nombre.id_for_label }}" class="etiqueta">{{ form.nombre.label }} *</label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.nombre.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div>
-                <label for="{{ form.ficha_clinica_id.id_for_label }}" class="etiqueta">{{ form.ficha_clinica_id.label }}</label>
-                {{ form.ficha_clinica_id }}
-                {% if form.ficha_clinica_id.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.ficha_clinica_id.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div>
-                <label for="{{ form.telefono.id_for_label }}" class="etiqueta">{{ form.telefono.label }}</label>
-                {{ form.telefono }}
-                {% if form.telefono.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.telefono.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div>
-                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="etiqueta">{{ form.fecha_nacimiento.label }} *</label>
-                {{ form.fecha_nacimiento }}
-                {% if form.fecha_nacimiento.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.fecha_nacimiento.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div>
-                <label for="{{ form.nacionalidad.id_for_label }}" class="etiqueta">{{ form.nacionalidad.label }}</label>
-                {{ form.nacionalidad }}
-                {% if form.nacionalidad.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.nacionalidad.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div>
-                <label for="{{ form.prevision.id_for_label }}" class="etiqueta">{{ form.prevision.label }}</label>
-                {{ form.prevision }}
-                {% if form.prevision.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.prevision.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-
-            <div class="flex items-center pt-6">
-                <div class="flex items-center h-5">
-                    {{ form.pertenece_pueblo_originario }}
-                </div>
-                <div class="ml-3 text-sm">
-                    <label for="{{ form.pertenece_pueblo_originario.id_for_label }}" class="font-medium text-gray-700">
-                        {{ form.pertenece_pueblo_originario.label }}
-                    </label>
-                    <p class="text-xs text-gray-500">Para estadísticas REM</p>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <label for="{{ form.antecedentes_medicos.id_for_label }}" class="etiqueta">{{ form.antecedentes_medicos.label }}</label>
-            {{ form.antecedentes_medicos }}
-            {% if form.antecedentes_medicos.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.antecedentes_medicos.errors|join:", " }}</p>
             {% endif %}
-        </div>
 
-        <div class="pt-4 flex justify-end gap-3">
-            <a href="{% url 'core:madre_list' %}" class="boton boton-gris">Cancelar</a>
-            <button type="submit" class="boton boton-primario">
-                Guardar
-            </button>
-        </div>
-    </form>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.rut.id_for_label }}" class="form-label required">RUT</label>
+                    <input type="text" 
+                           id="{{ form.rut.id_for_label }}" 
+                           name="{{ form.rut.name }}"
+                           class="form-input" 
+                           placeholder="12.345.678-9"
+                           value="{{ form.rut.value|default:'' }}">
+                    {% if form.rut.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.rut.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.nombre.id_for_label }}" class="form-label required">Nombre Completo</label>
+                    <input type="text" 
+                           id="{{ form.nombre.id_for_label }}" 
+                           name="{{ form.nombre.name }}"
+                           class="form-input" 
+                           placeholder="Nombre completo de la paciente"
+                           value="{{ form.nombre.value|default:'' }}">
+                    {% if form.nombre.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.nombre.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label required">Fecha de Nacimiento</label>
+                    <input type="date" 
+                           id="{{ form.fecha_nacimiento.id_for_label }}" 
+                           name="{{ form.fecha_nacimiento.name }}"
+                           class="form-input"
+                           value="{{ form.fecha_nacimiento.value|default:'' }}">
+                    {% if form.fecha_nacimiento.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.fecha_nacimiento.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="edad" class="form-label">Edad</label>
+                    <input type="number" 
+                           id="edad"
+                           class="form-input" 
+                           placeholder="Edad en años"
+                           readonly
+                           style="background: var(--gray-100);">
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.nacionalidad.id_for_label }}" class="form-label required">Nacionalidad</label>
+                    <select id="{{ form.nacionalidad.id_for_label }}" 
+                            name="{{ form.nacionalidad.name }}"
+                            class="form-select">
+                        <option value="Chilena">Chilena</option>
+                        <option value="Extranjera">Extranjera</option>
+                    </select>
+                    {% if form.nacionalidad.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.nacionalidad.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">¿Pertenece a pueblo originario?</label>
+                    <div class="form-checkbox">
+                        <input type="checkbox" 
+                               id="{{ form.pertenece_pueblo_originario.id_for_label }}" 
+                               name="{{ form.pertenece_pueblo_originario.name }}"
+                               {% if form.pertenece_pueblo_originario.value %}checked{% endif %}>
+                        <label for="{{ form.pertenece_pueblo_originario.id_for_label }}">Sí, pertenece a pueblo originario</label>
+                    </div>
+                    <p class="form-hint">Para estadísticas REM</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.ficha_clinica_id.id_for_label }}" class="form-label">Dirección</label>
+                <input type="text" 
+                       id="{{ form.ficha_clinica_id.id_for_label }}" 
+                       name="{{ form.ficha_clinica_id.name }}"
+                       class="form-input" 
+                       placeholder="Dirección de residencia"
+                       value="{{ form.ficha_clinica_id.value|default:'' }}">
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono de Contacto</label>
+                    <input type="tel" 
+                           id="{{ form.telefono.id_for_label }}" 
+                           name="{{ form.telefono.name }}"
+                           class="form-input" 
+                           placeholder="+56 9 1234 5678"
+                           value="{{ form.telefono.value|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.prevision.id_for_label }}" class="form-label">Previsión de Salud</label>
+                    <select id="{{ form.prevision.id_for_label }}" 
+                            name="{{ form.prevision.name }}"
+                            class="form-select">
+                        <option value="">Seleccione...</option>
+                        <option value="FONASA">FONASA A</option>
+                        <option value="ISAPRE">ISAPRE</option>
+                        <option value="PARTICULAR">Particular</option>
+                        <option value="NINGUNA">Ninguna</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.antecedentes_medicos.id_for_label }}" class="form-label">Antecedentes Médicos</label>
+                <textarea id="{{ form.antecedentes_medicos.id_for_label }}" 
+                          name="{{ form.antecedentes_medicos.name }}"
+                          class="form-textarea" 
+                          placeholder="Ingrese antecedentes médicos relevantes">{{ form.antecedentes_medicos.value|default:'' }}</textarea>
+                {% if form.antecedentes_medicos.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.antecedentes_medicos.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+
+            <div class="btn-group">
+                <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Registrar Madre
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-
-<script>
-    document.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select, textarea').forEach(el => {
-        if (el.tagName === 'SELECT') {
-            el.classList.add('select');
-        } else if (el.tagName === 'TEXTAREA') {
-            el.classList.add('textarea');
-        } else {
-            el.classList.add('input');
-        }
-    });
-    document.querySelector('input[type="checkbox"]').classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded');
-</script>
 {% endblock %}

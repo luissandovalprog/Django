@@ -1,167 +1,91 @@
 {% extends 'base.html' %}
-
-{% block title %}Resultado REM BS22{% endblock %}
+{% block title %}Resultados REM{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2>Reporte REM BS22</h2>
-        <p class="text-muted">Atenciones de Obstetricia y Ginecología</p>
-        <p><strong>Periodo:</strong> {{ fecha_inicio|date:"d/m/Y" }} - {{ fecha_fin|date:"d/m/Y" }}</p>
-        <p><strong>Total Partos:</strong> {{ total_partos }}</p>
-    </div>
-    <div class="col-md-4 text-end">
-        <a href="{% url 'reportes:rem_bs22' %}" class="btn btn-secondary">Nuevo Reporte</a>
-        <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5>Tipos de Parto</h5>
-            </div>
-            <div class="card-body">
-                <table class="table">
-                    <tr>
-                        <th>Eutócicos:</th>
-                        <td>{{ estadisticas.eutocicos }}</td>
-                    </tr>
-                    <tr>
-                        <th>Cesáreas Electivas:</th>
-                        <td>{{ estadisticas.cesareas_electivas }}</td>
-                    </tr>
-                    <tr>
-                        <th>Cesáreas de Urgencia:</th>
-                        <td>{{ estadisticas.cesareas_urgencia }}</td>
-                    </tr>
-                    <tr>
-                        <th>Fórceps:</th>
-                        <td>{{ estadisticas.forceps }}</td>
-                    </tr>
-                    <tr>
-                        <th>Ventosa:</th>
-                        <td>{{ estadisticas.ventosa }}</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
+<div style="max-width: 1200px; margin: 0 auto;">
     
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5>Anestesia Utilizada</h5>
-            </div>
-            <div class="card-body">
-                <table class="table">
-                    <tr>
-                        <th>Epidural:</th>
-                        <td>{{ estadisticas.epidural }}</td>
-                    </tr>
-                    <tr>
-                        <th>Raquídea:</th>
-                        <td>{{ estadisticas.raquidea }}</td>
-                    </tr>
-                    <tr>
-                        <th>General:</th>
-                        <td>{{ estadisticas.general }}</td>
-                    </tr>
-                    <tr>
-                        <th>Sin Anestesia:</th>
-                        <td>{{ estadisticas.sin_anestesia }}</td>
-                    </tr>
-                </table>
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 class="card-header" style="margin-bottom: 8px;">Generar Reporte REM Neonatal</h2>
+                <div style="display: flex; gap: 24px; font-size: 14px; color: var(--gray-600);">
+                    <div>
+                        <strong>Fecha Inicio:</strong> 
+                        <input type="date" value="01-10-2025" style="border: none; font-size: 14px; padding: 0;">
+                    </div>
+                    <div>
+                        <strong>Fecha Fin:</strong>
+                        <input type="date" value="06-11-2025" style="border: none; font-size: 14px; padding: 0;">
+                    </div>
+                    <button class="btn btn-primary" style="padding: 6px 16px; font-size: 14px;">
+                        Generar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5>Estadísticas de Recién Nacidos</h5>
-            </div>
-            <div class="card-body">
-                <table class="table">
+    <div class="card">
+        <h3 class="card-header">Resultados</h3>
+        
+        <div class="table-container">
+            <table class="table">
+                <thead>
                     <tr>
-                        <th>RN Vivos:</th>
-                        <td>{{ estadisticas.rn_vivos }}</td>
+                        <th>Fecha</th>
+                        <th>RUT Madre</th>
+                        <th>Nombre Madre</th>
+                        <th>Tipo Parto</th>
+                        <th>Peso RN</th>
+                        <th>Talla RN</th>
+                        <th>APGAR 1</th>
+                        <th>APGAR 5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2025-10-10</td>
+                        <td>12.345.678-9</td>
+                        <td>María Gabriela González Pérez</td>
+                        <td><span class="badge badge-green">Vaginal</span></td>
+                        <td>3200</td>
+                        <td>50</td>
+                        <td>9</td>
+                        <td>10</td>
                     </tr>
                     <tr>
-                        <th>RN Muertos:</th>
-                        <td>{{ estadisticas.rn_muertos }}</td>
+                        <td>2025-10-11</td>
+                        <td>98.765.432-1</td>
+                        <td>Carla Andrea Pérez Muñoz</td>
+                        <td><span class="badge badge-yellow">Cesárea</span></td>
+                        <td>3850</td>
+                        <td>52</td>
+                        <td>8</td>
+                        <td>9</td>
                     </tr>
                     <tr>
-                        <th>Masculinos:</th>
-                        <td>{{ estadisticas.rn_masculinos }}</td>
+                        <td>2025-10-03</td>
+                        <td>15.234.567-8</td>
+                        <td>Patricia Elena Silva Rojas</td>
+                        <td><span class="badge badge-green">Vaginal</span></td>
+                        <td>3100</td>
+                        <td>48</td>
+                        <td>9</td>
+                        <td>10</td>
                     </tr>
-                    <tr>
-                        <th>Femeninos:</th>
-                        <td>{{ estadisticas.rn_femeninos }}</td>
-                    </tr>
-                </table>
-            </div>
+                </tbody>
+            </table>
         </div>
-    </div>
-    
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-warning text-white">
-                <h5>Distribución por Peso y APGAR</h5>
-            </div>
-            <div class="card-body">
-                <table class="table">
-                    <tr>
-                        <th>Bajo Peso (&lt; 2500g):</th>
-                        <td>{{ estadisticas.rn_bajo_peso }}</td>
-                    </tr>
-                    <tr>
-                        <th>Peso Normal (2500-3999g):</th>
-                        <td>{{ estadisticas.rn_peso_normal }}</td>
-                    </tr>
-                    <tr>
-                        <th>Sobre Peso (&gt;= 4000g):</th>
-                        <td>{{ estadisticas.rn_sobre_peso }}</td>
-                    </tr>
-                    <tr>
-                        <th>APGAR Bajo (&lt; 7 a los 5'):</th>
-                        <td>{{ estadisticas.apgar_bajo }}</td>
-                    </tr>
-                    <tr>
-                        <th>APGAR Normal (&gt;= 7 a los 5'):</th>
-                        <td>{{ estadisticas.apgar_normal }}</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5>Distribución por Edad Gestacional</h5>
-            </div>
-            <div class="card-body">
-                <table class="table">
-                    <tr>
-                        <th>Pretérmino (&lt; 37 sem):</th>
-                        <td>{{ estadisticas.pretermino }}</td>
-                    </tr>
-                    <tr>
-                        <th>Término (37-41 sem):</th>
-                        <td>{{ estadisticas.termino }}</td>
-                    </tr>
-                    <tr>
-                        <th>Postérmino (&gt; 41 sem):</th>
-                        <td>{{ estadisticas.postermino }}</td>
-                    </tr>
-                </table>
-            </div>
+        <div style="margin-top: 24px;">
+            <button class="btn btn-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Exportar a Excel (CSV)
+            </button>
         </div>
     </div>
 </div>

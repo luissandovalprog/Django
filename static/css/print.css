@@ -1,0 +1,29 @@
+@media print {
+    .navbar,
+    .btn-logout,
+    .search-container,
+    .messages-container,
+    .action-buttons,
+    .btn-group {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid var(--gray-300);
+        page-break-inside: avoid;
+    }
+
+    .table {
+        page-break-inside: auto;
+    }
+
+    .table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+}
