@@ -208,7 +208,7 @@ class PartoForm(forms.ModelForm):
 
 
 class RecienNacidoForm(forms.ModelForm):
-    """Formulario para crear/editar Recién Nacido (sin cambios)"""
+    """Formulario para crear/editar Recién Nacido (CORREGIDO)"""
     
     class Meta:
         model = RecienNacido
@@ -243,6 +243,7 @@ class RecienNacidoForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        # CRÍTICO: Extraer el usuario del constructor
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
     
@@ -272,8 +273,11 @@ class RecienNacidoForm(forms.ModelForm):
     
     def save(self, commit=True):
         instance = super().save(commit=False)
-        if self.user and not instance.usuario_registro:
+        
+        # CRÍTICO: Asignar usuario_registro si no está asignado y tenemos user
+        if self.user and not instance.usuario_registro_id:
             instance.usuario_registro = self.user
+        
         if commit:
             instance.save()
         return instance

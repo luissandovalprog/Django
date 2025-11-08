@@ -592,7 +592,8 @@ def registrar_parto_para_madre(request, madre_pk):
 @login_required
 def registrar_parto_completo(request, madre_pk):
     """
-    Registrar parto y recién nacido en una sola vista (como la imagen)
+    Registrar parto y recién nacido en una sola vista
+    VERSIÓN FINAL - Corrige el problema de usuario_registro
     """
     madre = get_object_or_404(Madre, pk=madre_pk)
     
@@ -603,43 +604,67 @@ def registrar_parto_completo(request, madre_pk):
     
     if request.method == 'POST':
         parto_form = PartoForm(request.POST, user=request.user)
-        rn_form = RecienNacidoForm(request.POST, user=request.user)
         
-        if parto_form.is_valid() and rn_form.is_valid():
-            # Guardar parto
+        if parto_form.is_valid():
+            # Paso 1: Guardar el parto
             parto = parto_form.save(commit=False)
             parto.madre = madre
             parto.usuario_registro = request.user
             parto.save()
             parto_form.save_m2m()
             
-            # Guardar recién nacido
-            recien_nacido = rn_form.save(commit=False)
-            recien_nacido.parto = parto
-            recien_nacido.usuario_registro = request.user
-            recien_nacido.save()
+            # Paso 2: Preparar datos del RN con el ID del parto
+            rn_data = request.POST.copy()
+            rn_data['parto'] = str(parto.pk)
             
-            # Registrar en auditoría
-            LogAuditoria.registrar(
-                usuario=request.user,
-                accion='CREATE_PARTO_COMPLETO',
-                tabla_afectada='Parto',
-                registro_id=parto.id,
-                detalles=f'Parto y RN registrados para {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Peso RN: {recien_nacido.peso_gramos}g',
-                ip=get_client_ip(request)
-            )
+            # Paso 3: Crear formulario del RN
+            rn_form = RecienNacidoForm(rn_data, user=request.user)
             
-            messages.success(request, f'Parto y recién nacido registrados exitosamente para {madre.get_nombre()}')
-            return redirect('core:parto_detail', pk=parto.pk)
+            if rn_form.is_valid():
+                # Paso 4: Guardar RN
+                recien_nacido = rn_form.save(commit=False)
+                recien_nacido.parto = parto
+                
+                # CRÍTICO: Verificar que usuario_registro esté asignado
+                if not hasattr(recien_nacido, 'usuario_registro') or recien_nacido.usuario_registro is None:
+                    recien_nacido.usuario_registro = request.user
+                
+                try:
+                    recien_nacido.save()
+                    
+                    # Registrar en auditoría
+                    LogAuditoria.registrar(
+                        usuario=request.user,
+                        accion='CREATE_PARTO_COMPLETO',
+                        tabla_afectada='Parto',
+                        registro_id=parto.id,
+                        detalles=f'Parto y RN registrados para {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Peso RN: {recien_nacido.peso_gramos}g',
+                        ip=get_client_ip(request)
+                    )
+                    
+                    messages.success(request, f'Parto y recién nacido registrados exitosamente para {madre.get_nombre()}')
+                    return redirect('core:parto_detail', pk=parto.pk)
+                    
+                except Exception as e:
+                    # Rollback: eliminar el parto si el RN falla
+                    parto.delete()
+                    messages.error(request, f'Error al guardar recién nacido: {str(e)}')
+            else:
+                # Rollback: eliminar el parto si la validación del RN falla
+                parto.delete()
+                for field, errors in rn_form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'Recién Nacido - {field}: {error}')
         else:
-            # Mostrar errores
+            # Mostrar errores del parto
             for field, errors in parto_form.errors.items():
                 for error in errors:
                     messages.error(request, f'Parto - {field}: {error}')
-            for field, errors in rn_form.errors.items():
-                for error in errors:
-                    messages.error(request, f'Recién Nacido - {field}: {error}')
+        
+        # Recrear formularios con datos POST para mostrar errores
+        rn_form = RecienNacidoForm(request.POST, user=request.user)
     else:
+        # GET request: formularios vacíos
         parto_form = PartoForm(user=request.user)
         rn_form = RecienNacidoForm(user=request.user)
     
