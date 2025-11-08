@@ -182,60 +182,74 @@
 
     <!-- Mothers without Birth Record -->
     {% if user.puede_crear_partos %}
-    <div class="card">
-        <h3 class="card-header">Madres sin Parto Registrado (Mi Turno)</h3>
-        {% if not madres_sin_parto %}
-        <p style="text-align: center; color: var(--gray-500); padding: 20px 0;">
-            Todas las madres de este turno tienen partos registrados
-        </p>
-        {% else %}
-        <div class="table-container">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>RUT</th>
-                <th>Edad</th>
-                <th>Dirección</th>
-                <th>Previsión</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-    {% for madre in madres_sin_parto %}
-    <tr>
-        <td style="font-weight: 600;">{{ madre.ficha_clinica_numero|default:"Sin Ficha" }}</td>
-        <td>{{ madre.nombre_descifrado|default:"N/A" }}</td>
-        <td>{{ madre.get_rut|default:"N/A" }}</td>
-        <td>
-            {% if madre.fecha_nacimiento %}
-                {% now "Y" as current_year %}
-                {{ current_year|add:"-"|add:madre.fecha_nacimiento.year }} años
-            {% else %}
-                N/A
-            {% endif %}
-        </td>
-        <td>
-            <span class="badge badge-blue">{{ madre.prevision|default:"Sin Previsión" }}</span>
-        </td>
-        <td>
-            <a href="{% url 'core:registrar_parto_completo' madre.pk %}" class="btn btn-success">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="16"/>
-                    <line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
-                Registrar Parto
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
-    </div>
-    </table>
-        {% endif %}
+<div class="card">
+    <h3 class="card-header">Madres sin Parto Registrado (Mi Turno)</h3>
+    {% if not madres_sin_parto %}
+    <p style="text-align: center; color: var(--gray-500); padding: 20px 0;">
+        Todas las madres de este turno tienen partos registrados
+    </p>
+    {% else %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>NOMBRE</th>
+                    <th>RUT</th>
+                    <th>EDAD</th>
+                    <th>DIRECCIÓN</th>
+                    <th>PREVISIÓN</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for madre in madres_sin_parto %}
+                <tr>
+                    <!-- NOMBRE → Nombre completo descifrado -->
+                    <td style="font-weight: 600;">{{ madre.nombre_descifrado|default:"N/A" }}</td>
+                    
+                    <!-- RUT → RUT descifrado -->
+                    <td>{{ madre.get_rut|default:"N/A" }}</td>
+                    
+                    <!-- EDAD → Edad calculada en años -->
+                    <td>
+                        {% if madre.fecha_nacimiento %}
+                            {% load tz %}
+                            {% now "Y" as current_year %}
+                            {% widthratio madre.fecha_nacimiento|date:"Y" 1 -1 as birth_year_negative %}
+                            {% widthratio current_year 1 1 as current_year_int %}
+                            {{ current_year_int|add:birth_year_negative }} años
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    
+                    <!-- DIRECCIÓN → Dirección física -->
+                    <td>{{ madre.direccion|default:"Sin dirección"|truncatewords:8 }}</td>
+                    
+                    <!-- PREVISIÓN → Badge de previsión -->
+                    <td>
+                        <span class="badge badge-blue">{{ madre.prevision|default:"Sin Previsión" }}</span>
+                    </td>
+                    
+                    <!-- ACCIÓN → Botón Registrar Parto -->
+                    <td>
+                        <a href="{% url 'core:registrar_parto_completo' madre.pk %}" class="btn btn-success">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                            Registrar Parto
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
+</div>
+{% endif %}
 
 </div>
 {% endblock %}

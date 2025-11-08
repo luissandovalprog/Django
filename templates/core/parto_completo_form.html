@@ -39,7 +39,6 @@
                                 class="form-select">
                             <option value="">Seleccione...</option>
                             <option value="Eutócico">Eutócico</option>
-                            <option value="Vaginal">Vaginal</option>
                             <option value="Cesárea Electiva">Cesárea Electiva</option>
                             <option value="Cesárea Urgencia">Cesárea Urgencia</option>
                             <option value="Fórceps">Fórceps</option>
@@ -50,6 +49,25 @@
                         {% endif %}
                     </div>
 
+                    <div class="form-group">
+                        <label for="{{ parto_form.anestesia.id_for_label }}" class="form-label">Anestesia</label>
+                        <select id="{{ parto_form.anestesia.id_for_label }}" 
+                                name="{{ parto_form.anestesia.name }}"
+                                class="form-select">
+                            <option value="">Seleccione...</option>
+                            <option value="Epidural">Epidural</option>
+                            <option value="Raquídea">Raquídea</option>
+                            <option value="General">General</option>
+                            <option value="Otra">Otra</option>
+                            <option value="Ninguna">Ninguna</option>
+                        </select>
+                        {% if parto_form.anestesia.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ parto_form.anestesia.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="id_fecha" class="form-label required">Fecha</label>
                         <input type="date" 
@@ -70,6 +88,23 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="{{ parto_form.edad_gestacional.id_for_label }}" class="form-label">Edad Gestacional (semanas)</label>
+                    <input type="number" 
+                           id="{{ parto_form.edad_gestacional.id_for_label }}" 
+                           name="{{ parto_form.edad_gestacional.name }}"
+                           class="form-input" 
+                           placeholder="37"
+                           min="20"
+                           max="45"
+                           value="{{ parto_form.edad_gestacional.value|default:'' }}"
+                           style="max-width: 200px;">
+                    <p class="form-hint">Entre 20 y 45 semanas (opcional)</p>
+                    {% if parto_form.edad_gestacional.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ parto_form.edad_gestacional.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
                     <label class="form-label required">¿La madre recibió corticoides durante la gestación?</label>
                     <div style="display: flex; gap: 24px; margin-top: 8px;">
                         <div class="form-checkbox">
@@ -81,14 +116,13 @@
                             <label for="corticoides_no" style="font-weight: normal; cursor: pointer;">No</label>
                         </div>
                     </div>
+                    <p class="form-hint">Importante para evaluación neonatal</p>
                 </div>
             </div>
 
             <!-- Datos del Recién Nacido -->
             <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #10b981;">
                 <h3 style="font-size: 18px; font-weight: 600; color: #065f46; margin-bottom: 16px;">Datos del Recién Nacido</h3>
-                
-                <!-- NO enviar el campo parto aquí, se asigna en el backend -->
                 
                 <div class="form-grid">
                     <div class="form-group">

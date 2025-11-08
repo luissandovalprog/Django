@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <h2 class="card-header">{{ title }}</h2>
+
+        <!-- Información de la madre (solo lectura) -->
+        {% if parto %}
+        <div style="background: #e0f2fe; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary-blue);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <h3 style="font-size: 16px; font-weight: 600; color: var(--gray-900); margin: 0;">Madre: {{ parto.madre.get_nombre }}</h3>
+            </div>
+            <p style="font-size: 14px; color: var(--gray-700); margin: 4px 0 0 0;">RUT: {{ parto.madre.get_rut }}</p>
+            <p style="font-size: 12px; color: var(--primary-blue); margin: 8px 0 0 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Editando registro del {{ parto.fecha_registro|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Datos del Parto -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.madre.id_for_label }}" class="form-label required">Madre</label>
+                    <select id="{{ form.madre.id_for_label }}" 
+                            name="{{ form.madre.name }}"
+                            class="form-select"
+                            {% if parto %}disabled{% endif %}>
+                        {{ form.madre }}
+                    </select>
+                    {% if parto %}
+                    <input type="hidden" name="{{ form.madre.name }}" value="{{ parto.madre.id }}">
+                    {% endif %}
+                    <p class="form-hint">La madre no puede ser modificada después del registro</p>
+                    {% if form.madre.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.madre.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.fecha_parto.id_for_label }}" class="form-label required">Fecha y Hora del Parto</label>
+                    <input type="datetime-local" 
+                           id="{{ form.fecha_parto.id_for_label }}" 
+                           name="{{ form.fecha_parto.name }}"
+                           class="form-input"
+                           value="{{ form.fecha_parto.value|date:'Y-m-d\TH:i' }}">
+                    {% if form.fecha_parto.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.fecha_parto.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.tipo_parto.id_for_label }}" class="form-label required">Tipo de Parto</label>
+                    <select id="{{ form.tipo_parto.id_for_label }}" 
+                            name="{{ form.tipo_parto.name }}"
+                            class="form-select">
+                        <option value="">Seleccione...</option>
+                        <option value="Eutócico" {% if form.tipo_parto.value == "Eutócico" %}selected{% endif %}>Eutócico</option>
+                        <option value="Cesárea Electiva" {% if form.tipo_parto.value == "Cesárea Electiva" %}selected{% endif %}>Cesárea Electiva</option>
+                        <option value="Cesárea Urgencia" {% if form.tipo_parto.value == "Cesárea Urgencia" %}selected{% endif %}>Cesárea Urgencia</option>
+                        <option value="Fórceps" {% if form.tipo_parto.value == "Fórceps" %}selected{% endif %}>Fórceps</option>
+                        <option value="Ventosa" {% if form.tipo_parto.value == "Ventosa" %}selected{% endif %}>Ventosa</option>
+                    </select>
+                    {% if form.tipo_parto.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.tipo_parto.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.anestesia.id_for_label }}" class="form-label">Anestesia</label>
+                    <select id="{{ form.anestesia.id_for_label }}" 
+                            name="{{ form.anestesia.name }}"
+                            class="form-select">
+                        <option value="">Seleccione...</option>
+                        <option value="Epidural" {% if form.anestesia.value == "Epidural" %}selected{% endif %}>Epidural</option>
+                        <option value="Raquídea" {% if form.anestesia.value == "Raquídea" %}selected{% endif %}>Raquídea</option>
+                        <option value="General" {% if form.anestesia.value == "General" %}selected{% endif %}>General</option>
+                        <option value="Otra" {% if form.anestesia.value == "Otra" %}selected{% endif %}>Otra</option>
+                        <option value="Ninguna" {% if form.anestesia.value == "Ninguna" %}selected{% endif %}>Ninguna</option>
+                    </select>
+                    {% if form.anestesia.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.anestesia.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.edad_gestacional.id_for_label }}" class="form-label">Edad Gestacional (semanas)</label>
+                <input type="number" 
+                       id="{{ form.edad_gestacional.id_for_label }}" 
+                       name="{{ form.edad_gestacional.name }}"
+                       class="form-input" 
+                       placeholder="37"
+                       min="20"
+                       max="45"
+                       value="{{ form.edad_gestacional.value|default:'' }}"
+                       style="max-width: 200px;">
+                <p class="form-hint">Entre 20 y 45 semanas</p>
+                {% if form.edad_gestacional.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.edad_gestacional.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+
+            <div class="btn-group">
+                <a href="{% if parto %}{% url 'core:parto_detail' parto.pk %}{% else %}{% url 'core:dashboard' %}{% endif %}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    {% if parto %}Actualizar Parto{% else %}Registrar Parto{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

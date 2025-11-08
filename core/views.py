@@ -30,6 +30,7 @@ def dashboard(request):
     """
     Dashboard principal con estadísticas y filtrado
     """
+    from datetime import date
     
     busqueda_query = request.GET.get('busqueda', '')
 
@@ -92,10 +93,21 @@ def dashboard(request):
         else:
             p.badge_color = 'badge-red'
 
-    # Madres sin parto
+    # Madres sin parto - CORREGIDO: Calcular edad aquí
     madres_sin_parto = madres_qs.filter(partos__isnull=True)
+    hoy = date.today()
+    
     for m in madres_sin_parto:
         m.nombre_descifrado = m.get_nombre()
+        # CALCULAR EDAD
+        if m.fecha_nacimiento:
+            edad = hoy.year - m.fecha_nacimiento.year
+            # Ajustar si aún no ha cumplido años este año
+            if (hoy.month, hoy.day) < (m.fecha_nacimiento.month, m.fecha_nacimiento.day):
+                edad -= 1
+            m.edad_calculada = edad
+        else:
+            m.edad_calculada = None
 
     context = {
         'total_madres': total_madres,
