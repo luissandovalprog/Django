@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <h2 class="card-header">{{ title }}</h2>
+
+        <!-- Información de la madre -->
+        <div style="background: #e0f2fe; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary-blue);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <h3 style="font-size: 16px; font-weight: 600; color: var(--gray-900); margin: 0;">Madre: {{ madre.nombre_descifrado }}</h3>
+            </div>
+            <p style="font-size: 14px; color: var(--gray-700); margin: 4px 0 0 0;">RUT: {{ madre.rut_descifrado }}</p>
+            <p style="font-size: 12px; color: var(--primary-blue); margin: 8px 0 0 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Tendrá 2 horas para editar este registro después de guardarlo
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Campo oculto para madre -->
+            <input type="hidden" name="madre" value="{{ madre.id }}">
+
+            <!-- Datos del Parto -->
+            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--gray-200);">
+                <h3 style="font-size: 18px; font-weight: 600; color: var(--gray-900); margin-bottom: 16px;">Datos del Parto</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ parto_form.tipo_parto.id_for_label }}" class="form-label required">Tipo de Parto</label>
+                        <select id="{{ parto_form.tipo_parto.id_for_label }}" 
+                                name="{{ parto_form.tipo_parto.name }}"
+                                class="form-select">
+                            <option value="">Seleccione...</option>
+                            <option value="Eutócico">Eutócico</option>
+                            <option value="Vaginal">Vaginal</option>
+                            <option value="Cesárea Electiva">Cesárea Electiva</option>
+                            <option value="Cesárea Urgencia">Cesárea Urgencia</option>
+                            <option value="Fórceps">Fórceps</option>
+                            <option value="Ventosa">Ventosa</option>
+                        </select>
+                        {% if parto_form.tipo_parto.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ parto_form.tipo_parto.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_fecha" class="form-label required">Fecha</label>
+                        <input type="date" 
+                               id="id_fecha"
+                               name="fecha_parto_date"
+                               class="form-input"
+                               value="{% now 'Y-m-d' %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_hora" class="form-label required">Hora</label>
+                        <input type="time" 
+                               id="id_hora"
+                               name="fecha_parto_time"
+                               class="form-input"
+                               value="{% now 'H:i' %}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">¿La madre recibió corticoides durante la gestación?</label>
+                    <div style="display: flex; gap: 24px; margin-top: 8px;">
+                        <div class="form-checkbox">
+                            <input type="radio" id="corticoides_si" name="corticoides" value="Si" style="width: 18px; height: 18px;">
+                            <label for="corticoides_si" style="font-weight: normal; cursor: pointer;">Sí</label>
+                        </div>
+                        <div class="form-checkbox">
+                            <input type="radio" id="corticoides_no" name="corticoides" value="No" checked style="width: 18px; height: 18px;">
+                            <label for="corticoides_no" style="font-weight: normal; cursor: pointer;">No</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos del Recién Nacido -->
+            <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #10b981;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #065f46; margin-bottom: 16px;">Datos del Recién Nacido</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ rn_form.rut_provisorio.id_for_label }}" class="form-label required">RUT Provisorio</label>
+                        <input type="text" 
+                               id="{{ rn_form.rut_provisorio.id_for_label }}" 
+                               name="{{ rn_form.rut_provisorio.name }}"
+                               class="form-input" 
+                               placeholder="PROV-176248221925"
+                               value="{{ rn_form.rut_provisorio.value|default:'' }}">
+                        <p class="form-hint">Se asignará RUT definitivo después del registro civil</p>
+                        {% if rn_form.rut_provisorio.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.rut_provisorio.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ rn_form.sexo.id_for_label }}" class="form-label required">Sexo</label>
+                        <select id="{{ rn_form.sexo.id_for_label }}" 
+                                name="{{ rn_form.sexo.name }}"
+                                class="form-select">
+                            <option value="">Seleccione...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Indeterminado">Indeterminado</option>
+                        </select>
+                        {% if rn_form.sexo.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.sexo.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Estado al Nacer</label>
+                    <div style="display: flex; gap: 24px; margin-top: 8px;">
+                        <div class="form-checkbox">
+                            <input type="radio" 
+                                   id="{{ rn_form.estado_al_nacer.id_for_label }}_vivo" 
+                                   name="{{ rn_form.estado_al_nacer.name }}" 
+                                   value="Vivo" 
+                                   checked
+                                   style="width: 18px; height: 18px;">
+                            <label for="{{ rn_form.estado_al_nacer.id_for_label }}_vivo" style="font-weight: normal; cursor: pointer;">Vivo</label>
+                        </div>
+                        <div class="form-checkbox">
+                            <input type="radio" 
+                                   id="{{ rn_form.estado_al_nacer.id_for_label }}_muerto" 
+                                   name="{{ rn_form.estado_al_nacer.name }}" 
+                                   value="Nacido Muerto"
+                                   style="width: 18px; height: 18px;">
+                            <label for="{{ rn_form.estado_al_nacer.id_for_label }}_muerto" style="font-weight: normal; cursor: pointer;">Nacido Muerto</label>
+                        </div>
+                    </div>
+                    <p class="form-hint">Crítico para reportes REM A04</p>
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="form-group">
+                        <label for="{{ rn_form.peso_gramos.id_for_label }}" class="form-label required">Peso (gramos)</label>
+                        <input type="number" 
+                               id="{{ rn_form.peso_gramos.id_for_label }}" 
+                               name="{{ rn_form.peso_gramos.name }}"
+                               class="form-input" 
+                               placeholder="3500"
+                               min="500"
+                               max="6000"
+                               value="{{ rn_form.peso_gramos.value|default:'' }}">
+                        {% if rn_form.peso_gramos.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.peso_gramos.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ rn_form.talla_cm.id_for_label }}" class="form-label required">Talla (cm)</label>
+                        <input type="number" 
+                               id="{{ rn_form.talla_cm.id_for_label }}" 
+                               name="{{ rn_form.talla_cm.name }}"
+                               class="form-input" 
+                               placeholder="50"
+                               min="25"
+                               max="65"
+                               step="0.1"
+                               value="{{ rn_form.talla_cm.value|default:'' }}">
+                        {% if rn_form.talla_cm.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.talla_cm.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ rn_form.apgar_1_min.id_for_label }}" class="form-label required">APGAR 1 min</label>
+                        <input type="number" 
+                               id="{{ rn_form.apgar_1_min.id_for_label }}" 
+                               name="{{ rn_form.apgar_1_min.name }}"
+                               class="form-input" 
+                               placeholder="9"
+                               min="0"
+                               max="10"
+                               value="{{ rn_form.apgar_1_min.value|default:'' }}">
+                        {% if rn_form.apgar_1_min.errors %}
+                            <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.apgar_1_min.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ rn_form.apgar_5_min.id_for_label }}" class="form-label required">APGAR 5 min</label>
+                    <input type="number" 
+                           id="{{ rn_form.apgar_5_min.id_for_label }}" 
+                           name="{{ rn_form.apgar_5_min.name }}"
+                           class="form-input" 
+                           placeholder="10"
+                           min="0"
+                           max="10"
+                           style="max-width: 200px;"
+                           value="{{ rn_form.apgar_5_min.value|default:'' }}">
+                    {% if rn_form.apgar_5_min.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ rn_form.apgar_5_min.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Profilaxis Aplicadas -->
+                <div style="background: #ecfdf5; padding: 16px; border-radius: 8px; border: 1px solid #10b981;">
+                    <h4 style="font-size: 16px; font-weight: 600; color: #065f46; margin-bottom: 12px;">Profilaxis Aplicadas</h4>
+                    <div style="display: flex; gap: 32px;">
+                        <div class="form-checkbox">
+                            <input type="checkbox" 
+                                   id="{{ rn_form.profilaxis_vit_k.id_for_label }}" 
+                                   name="{{ rn_form.profilaxis_vit_k.name }}"
+                                   {% if rn_form.profilaxis_vit_k.value %}checked{% endif %}>
+                            <label for="{{ rn_form.profilaxis_vit_k.id_for_label }}">Vitamina K</label>
+                            <p class="form-hint" style="margin-left: 26px;">Prevención de hemorragia</p>
+                        </div>
+                        <div class="form-checkbox">
+                            <input type="checkbox" 
+                                   id="{{ rn_form.profilaxis_oftalmica.id_for_label }}" 
+                                   name="{{ rn_form.profilaxis_oftalmica.name }}"
+                                   {% if rn_form.profilaxis_oftalmica.value %}checked{% endif %}>
+                            <label for="{{ rn_form.profilaxis_oftalmica.id_for_label }}">Profilaxis Oftálmica</label>
+                            <p class="form-hint" style="margin-left: 26px;">Prevención de conjuntivitis neonatal</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Registrar Parto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Combinar fecha y hora antes de enviar el formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const fecha = document.getElementById('id_fecha').value;
+        const hora = document.getElementById('id_hora').value;
+        
+        if (fecha && hora) {
+            // Crear input oculto con datetime combinado
+            const datetimeInput = document.createElement('input');
+            datetimeInput.type = 'hidden';
+            datetimeInput.name = 'fecha_parto';
+            datetimeInput.value = `${fecha}T${hora}`;
+            this.appendChild(datetimeInput);
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

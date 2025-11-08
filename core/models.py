@@ -25,13 +25,24 @@ class Madre(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # CORREGIDO: ficha_clinica_id ahora es para ID, no dirección
-    ficha_clinica_id = models.CharField(max_length=255, unique=True, null=True, blank=True, 
-                                       verbose_name="Número de Ficha Clínica")
-    
+
+    ficha_clinica_numero = models.CharField(
+        max_length=50, 
+        unique=True, 
+        null=True, 
+        blank=True,
+        verbose_name="Número de Ficha Clínica"
+    )
     # NUEVO: Campo para dirección
     direccion = models.TextField(null=True, blank=True, verbose_name="Dirección de Residencia")
+    # CORREGIDO: ficha_clinica_id ahora es para ID, no dirección
+    ficha_clinica_id = models.CharField(
+        max_length=255, 
+        unique=True, 
+        null=True, 
+        blank=True,
+        verbose_name="Dirección (Legado)"
+    )
     
     # Datos cifrados + hash para búsqueda
     rut_hash = models.CharField(max_length=255, unique=True, null=True, blank=True)

@@ -50,7 +50,7 @@ class MadreForm(forms.ModelForm):
     class Meta:
         model = Madre
         fields = [
-            'ficha_clinica_id',  # AHORA es para el ID de ficha
+            'ficha_clinica_numero',  # AHORA es para el ID de ficha
             'direccion',         # NUEVO: Campo para dirección
             'fecha_nacimiento',
             'nacionalidad',
@@ -59,9 +59,9 @@ class MadreForm(forms.ModelForm):
             'antecedentes_medicos'
         ]
         widgets = {
-            'ficha_clinica_id': forms.TextInput(attrs={
+            'ficha_clinica_numero': forms.TextInput(attrs={
                 'class': 'form-control', 
-                'placeholder': 'Número de ficha clínica (ej: FC-2025-001)'
+                'placeholder': 'Ej: FC-2025-001'
             }),
             'direccion': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -87,7 +87,7 @@ class MadreForm(forms.ModelForm):
             }),
         }
         labels = {
-            'ficha_clinica_id': 'Número de Ficha Clínica',
+            'ficha_clinica_numero': 'Número de Ficha Clínica',
             'direccion': 'Dirección de Residencia',
             'fecha_nacimiento': 'Fecha de Nacimiento',
             'nacionalidad': 'Nacionalidad',

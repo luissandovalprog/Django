@@ -30,6 +30,7 @@ def dashboard(request):
     """
     Dashboard principal con estadísticas y filtrado
     """
+    
     busqueda_query = request.GET.get('busqueda', '')
 
     # Lógica de filtrado base
@@ -38,24 +39,22 @@ def dashboard(request):
 
     # Lógica de permisos
     if not request.user.puede_ver_todos_partos:
-        # Filtra partos por el usuario actual (Matrona/Enfermera por turno)
         partos_qs = partos_qs.filter(usuario_registro=request.user)
         madres_qs = madres_qs.filter(partos__usuario_registro=request.user).distinct()
 
     # Lógica de búsqueda
     if busqueda_query:
-        # Buscar por RUT hasheado, nombre hasheado o ficha clínica
         partos_qs = partos_qs.filter(
             Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) |
             Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(madre__ficha_clinica_id__icontains=busqueda_query) |
+            Q(madre__ficha_clinica_numero__icontains=busqueda_query) |
             Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
         ).distinct()
 
         madres_qs = madres_qs.filter(
             Q(rut_hash=crypto_service.hash_data(busqueda_query)) |
             Q(nombre_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(ficha_clinica_id__icontains=busqueda_query)
+            Q(ficha_clinica_numero__icontains=busqueda_query)
         ).distinct()
 
     # Estadísticas
@@ -73,11 +72,25 @@ def dashboard(request):
     # Recién nacidos
     total_recien_nacidos = RecienNacido.objects.filter(parto__in=partos_qs).count()
 
-    # Últimos partos
+    # Últimos partos con cálculo de días
     ultimos_partos = partos_qs.order_by('-fecha_parto')[:10]
+    now = timezone.now()
+    
     for p in ultimos_partos:
         p.madre.nombre_descifrado = p.madre.get_nombre()
         p.madre.rut_descifrado = p.madre.get_rut()
+        
+        # Calcular días de hospitalización
+        diferencia = now - p.fecha_parto
+        p.dias_hospitalizacion = diferencia.days
+        
+        # Determinar color del badge
+        if p.dias_hospitalizacion <= 3:
+            p.badge_color = 'badge-green'
+        elif p.dias_hospitalizacion <= 7:
+            p.badge_color = 'badge-yellow'
+        else:
+            p.badge_color = 'badge-red'
 
     # Madres sin parto
     madres_sin_parto = madres_qs.filter(partos__isnull=True)
@@ -523,4 +536,121 @@ def crear_epicrisis(request, pk):
         'madre': parto.madre,
         'title': 'Epicrisis e Indicaciones Médicas'
     }
-    return render(request, 'core/epicrisis_form.html', context)
+
+@login_required
+def registrar_parto_para_madre(request, madre_pk):
+    """
+    Registrar un nuevo parto para una madre específica (desde el dashboard)
+    """
+    madre = get_object_or_404(Madre, pk=madre_pk)
+    
+    # Verificar permisos
+    if not request.user.puede_crear_partos:
+        messages.error(request, 'No tienes permiso para registrar partos')
+        return redirect('core:dashboard')
+    
+    if request.method == 'POST':
+        form = PartoForm(request.POST, user=request.user)
+        if form.is_valid():
+            parto = form.save(commit=False)
+            parto.madre = madre  # Asignar la madre automáticamente
+            parto.usuario_registro = request.user  # Asignar el usuario
+            parto.save()
+            form.save_m2m()  # Guardar relaciones many-to-many si existen
+            
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREATE_PARTO',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f'Parto registrado para madre {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Fecha: {parto.fecha_parto}',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, f'Parto registrado exitosamente para {madre.get_nombre()}')
+            return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        # Inicializar el formulario sin madre pre-seleccionada
+        form = PartoForm(user=request.user)
+    
+    # Descifrar datos de la madre para mostrar en el template
+    madre.nombre_descifrado = madre.get_nombre()
+    madre.rut_descifrado = madre.get_rut()
+    
+    context = {
+        'form': form,
+        'title': 'Registrar Parto',
+        'madre': madre  # Pasamos la madre al template
+    }
+    return render(request,'core/parto_form.html', context)
+
+@login_required
+def registrar_parto_completo(request, madre_pk):
+    """
+    Registrar parto y recién nacido en una sola vista (como la imagen)
+    """
+    madre = get_object_or_404(Madre, pk=madre_pk)
+    
+    # Verificar permisos
+    if not request.user.puede_crear_partos:
+        messages.error(request, 'No tienes permiso para registrar partos')
+        return redirect('core:dashboard')
+    
+    if request.method == 'POST':
+        parto_form = PartoForm(request.POST, user=request.user)
+        rn_form = RecienNacidoForm(request.POST, user=request.user)
+        
+        if parto_form.is_valid() and rn_form.is_valid():
+            # Guardar parto
+            parto = parto_form.save(commit=False)
+            parto.madre = madre
+            parto.usuario_registro = request.user
+            parto.save()
+            parto_form.save_m2m()
+            
+            # Guardar recién nacido
+            recien_nacido = rn_form.save(commit=False)
+            recien_nacido.parto = parto
+            recien_nacido.usuario_registro = request.user
+            recien_nacido.save()
+            
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREATE_PARTO_COMPLETO',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f'Parto y RN registrados para {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Peso RN: {recien_nacido.peso_gramos}g',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, f'Parto y recién nacido registrados exitosamente para {madre.get_nombre()}')
+            return redirect('core:parto_detail', pk=parto.pk)
+        else:
+            # Mostrar errores
+            for field, errors in parto_form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Parto - {field}: {error}')
+            for field, errors in rn_form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Recién Nacido - {field}: {error}')
+    else:
+        parto_form = PartoForm(user=request.user)
+        rn_form = RecienNacidoForm(user=request.user)
+    
+    # Descifrar datos de la madre
+    madre.nombre_descifrado = madre.get_nombre()
+    madre.rut_descifrado = madre.get_rut()
+    
+    context = {
+        'parto_form': parto_form,
+        'rn_form': rn_form,
+        'title': 'Registro de Parto',
+        'madre': madre
+    }
+    return render(request, 'core/parto_completo_form.html', context)

@@ -93,13 +93,29 @@
             </div>
 
             <div class="form-group">
-                <label for="{{ form.ficha_clinica_id.id_for_label }}" class="form-label">Dirección</label>
+                <label for="{{ form.ficha_clinica_numero.id_for_label }}" class="form-label">Número de Ficha Clínica</label>
                 <input type="text" 
-                       id="{{ form.ficha_clinica_id.id_for_label }}" 
-                       name="{{ form.ficha_clinica_id.name }}"
-                       class="form-input" 
-                       placeholder="Dirección de residencia"
-                       value="{{ form.ficha_clinica_id.value|default:'' }}">
+                    id="{{ form.ficha_clinica_numero.id_for_label }}" 
+                    name="{{ form.ficha_clinica_numero.name }}"
+                    class="form-input" 
+                    placeholder="Ej: FC-2025-001"
+                    value="{{ form.ficha_clinica_numero.value|default:'' }}">
+                {% if form.ficha_clinica_numero.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.ficha_clinica_numero.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección de Residencia</label>
+                <input type="text" 
+                    id="{{ form.direccion.id_for_label }}" 
+                    name="{{ form.direccion.name }}"
+                    class="form-input" 
+                    placeholder="Dirección completa"
+                    value="{{ form.direccion.value|default:'' }}">
+                {% if form.direccion.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">{{ form.direccion.errors|join:", " }}</p>
+                {% endif %}
             </div>
 
             <div class="form-grid">

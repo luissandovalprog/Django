@@ -23,6 +23,12 @@ urlpatterns = [
     path('parto/<uuid:pk>/', views.parto_detail, name='parto_detail'),
     path('parto/<uuid:pk>/editar/', views.parto_update, name='parto_update'),
     
+    # Nueva ruta: Registrar parto para una madre específica
+    path('madre/<uuid:madre_pk>/registrar-parto/', views.registrar_parto_para_madre, name='registrar_parto_para_madre'),
+    
+    # Nueva ruta: Registrar parto completo (parto + RN) para una madre específica
+    path('madre/<uuid:madre_pk>/registrar-parto-completo/', views.registrar_parto_completo, name='registrar_parto_completo'),
+    
     # Recién Nacido URLs
     path('parto/<uuid:parto_pk>/recien-nacido/crear/', views.recien_nacido_create, name='recien_nacido_create'),
     path('recien-nacido/<uuid:pk>/editar/', views.recien_nacido_update, name='recien_nacido_update'),
