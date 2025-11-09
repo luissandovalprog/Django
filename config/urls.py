@@ -14,6 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+"""
+URL configuration for config project.
+"""
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import RedirectView
@@ -23,6 +26,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('reportes/', include('reportes.urls')),
     path('sistema/', include('core.urls')),
+    path('auditoria/', include('auditoria.urls')),
     
     # Redirect root to login
     path('', RedirectView.as_view(url='/accounts/login/', permanent=False)),

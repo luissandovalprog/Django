@@ -1,5 +1,6 @@
+# accounts/views.py
 """
-Vistas de autenticación
+Vistas de autenticación y gestión de usuarios
 """
 
 from django.contrib.auth import login, logout, authenticate
@@ -8,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from auditoria.models import LogAuditoria
-from .models import Usuario
+from .models import Usuario, Rol
 from .forms import CustomUsuarioCreationForm, CustomUsuarioChangeForm
 
 
@@ -23,9 +24,7 @@ def get_client_ip(request):
 
 
 def login_view(request):
-    """
-    Vista de login
-    """
+    """Vista de login"""
     if request.user.is_authenticated:
         return redirect('core:dashboard')
     
@@ -67,9 +66,7 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
-    """
-    Vista de logout
-    """
+    """Vista de logout"""
     user = request.user
     
     # Registrar logout en auditoría
@@ -94,17 +91,27 @@ def es_admin_sistema(user):
 def gestion_usuarios(request):
     """
     Vista de gestión de usuarios (solo para administradores)
+    Versión mejorada con estadísticas
     """
     usuarios = Usuario.objects.select_related('rol').all().order_by('nombre_completo')
-    context = {'usuarios': usuarios}
+    
+    # Calcular estadísticas
+    usuarios_activos = usuarios.filter(activo=True).count()
+    usuarios_inactivos = usuarios.filter(activo=False).count()
+    total_roles = usuarios.values('rol').distinct().count()
+    
+    context = {
+        'usuarios': usuarios,
+        'usuarios_activos': usuarios_activos,
+        'usuarios_inactivos': usuarios_inactivos,
+        'total_roles': total_roles,
+    }
     return render(request, 'accounts/gestion_usuarios.html', context)
 
 
 @user_passes_test(es_admin_sistema, login_url='core:dashboard')
 def crear_usuario(request):
-    """
-    Vista para crear nuevo usuario
-    """
+    """Vista para crear nuevo usuario"""
     if request.method == 'POST':
         form = CustomUsuarioCreationForm(request.POST)
         if form.is_valid():
@@ -116,25 +123,37 @@ def crear_usuario(request):
                 accion='CREAR_USUARIO',
                 tabla_afectada='Usuario',
                 registro_id=user.id,
-                detalles=f"Usuario creado: {user.username} - Rol: {user.rol.nombre if user.rol else 'Sin rol'}",
+                detalles=f"Usuario creado: {user.username} - Nombre: {user.nombre_completo} - Rol: {user.rol.nombre if user.rol else 'Sin rol'}",
                 ip=get_client_ip(request)
             )
             
             messages.success(request, f'Usuario {user.username} creado exitosamente.')
             return redirect('accounts:gestion_usuarios')
+        else:
+            # Mostrar errores específicos
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label}: {error}')
     else:
         form = CustomUsuarioCreationForm()
 
-    context = {'form': form, 'title': 'Crear Nuevo Usuario'}
+    context = {
+        'form': form,
+        'title': 'Nuevo Usuario',
+        'is_new': True
+    }
     return render(request, 'accounts/usuario_form.html', context)
 
 
 @user_passes_test(es_admin_sistema, login_url='core:dashboard')
 def editar_usuario(request, pk):
-    """
-    Vista para editar usuario existente
-    """
+    """Vista para editar usuario existente"""
     usuario = get_object_or_404(Usuario, pk=pk)
+    
+    # No permitir editar superusuarios excepto por otro superusuario
+    if usuario.is_superuser and not request.user.is_superuser:
+        messages.error(request, 'No tiene permisos para editar este usuario')
+        return redirect('accounts:gestion_usuarios')
     
     if request.method == 'POST':
         form = CustomUsuarioChangeForm(request.POST, instance=usuario)
@@ -142,19 +161,74 @@ def editar_usuario(request, pk):
             user = form.save()
             
             # Registrar en auditoría
+            cambios = []
+            if 'nueva_password' in form.cleaned_data and form.cleaned_data['nueva_password']:
+                cambios.append('contraseña actualizada')
+            if form.has_changed():
+                cambios.append(f"campos modificados: {', '.join(form.changed_data)}")
+            
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='MODIFICAR_USUARIO',
                 tabla_afectada='Usuario',
                 registro_id=user.id,
-                detalles=f"Usuario modificado: {user.username} - Rol: {user.rol.nombre if user.rol else 'Sin rol'}",
+                detalles=f"Usuario modificado: {user.username} - {' - '.join(cambios) if cambios else 'sin cambios'}",
                 ip=get_client_ip(request)
             )
             
             messages.success(request, f'Usuario {user.username} actualizado exitosamente.')
             return redirect('accounts:gestion_usuarios')
+        else:
+            # Mostrar errores específicos
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f'{form.fields.get(field, {}).label or field}: {error}')
     else:
         form = CustomUsuarioChangeForm(instance=usuario)
 
-    context = {'form': form, 'title': 'Editar Usuario', 'usuario': usuario}
+    context = {
+        'form': form,
+        'title': 'Editar Usuario',
+        'usuario': usuario,
+        'is_new': False
+    }
     return render(request, 'accounts/usuario_form.html', context)
+
+
+@user_passes_test(es_admin_sistema, login_url='core:dashboard')
+def desactivar_usuario(request, pk):
+    """Desactiva un usuario (no lo elimina, solo marca como inactivo)"""
+    if request.method != 'POST':
+        return redirect('accounts:gestion_usuarios')
+    
+    usuario = get_object_or_404(Usuario, pk=pk)
+    
+    # No permitir desactivar superusuarios
+    if usuario.is_superuser:
+        messages.error(request, 'No se puede desactivar un superusuario')
+        return redirect('accounts:gestion_usuarios')
+    
+    # No permitir auto-desactivación
+    if usuario == request.user:
+        messages.error(request, 'No puede desactivar su propia cuenta')
+        return redirect('accounts:gestion_usuarios')
+    
+    # Desactivar usuario
+    usuario.activo = False
+    usuario.save()
+    
+    # Registrar en auditoría
+    LogAuditoria.registrar(
+        usuario=request.user,
+        accion='DESACTIVAR_USUARIO',
+        tabla_afectada='Usuario',
+        registro_id=usuario.id,
+        detalles=f"Usuario desactivado: {usuario.username} ({usuario.nombre_completo})",
+        ip=get_client_ip(request)
+    )
+    
+    messages.success(request, f'Usuario {usuario.username} desactivado exitosamente')
+    return redirect('accounts:gestion_usuarios')

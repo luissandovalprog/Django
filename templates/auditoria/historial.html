@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Historial de Auditoría{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auditoria.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header con información del sistema -->
+    <div class="alert alert-warning" style="margin-bottom: 24px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div>
+            <strong>Administrador del Sistema</strong>
+            <p>Usted NO tiene acceso a datos clínicos de pacientes según Ley 20.584. Solo visualiza eventos de auditoría y gestión de usuarios.</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Total Eventos</h3>
+                <p>{{ total_eventos }}</p>
+                <span style="font-size: 13px; color: var(--gray-500);">Registros históricos</span>
+            </div>
+            <div class="stat-icon blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Usuarios Activos</h3>
+                <p>{{ usuarios_activos }}</p>
+                <span style="font-size: 13px; color: var(--gray-500);">Última semana</span>
+            </div>
+            <div class="stat-icon green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Eventos Hoy</h3>
+                <p>{{ eventos_hoy }}</p>
+                <span style="font-size: 13px; color: var(--gray-500);">Últimas 24 horas</span>
+            </div>
+            <div class="stat-icon purple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Tipos de Acciones</h3>
+                <p>{{ acciones_unicas|length }}</p>
+                <span style="font-size: 13px; color: var(--gray-500);">Registradas</span>
+            </div>
+            <div class="stat-icon cyan">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            Filtros de Búsqueda
+        </h3>
+        <form method="get" action="{% url 'auditoria:historial_auditoria' %}">
+            <div class="form-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="form-group">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" 
+                           name="busqueda" 
+                           class="form-input" 
+                           placeholder="Usuario, acción, IP..."
+                           value="{{ busqueda }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Acción</label>
+                    <select name="accion" class="form-select">
+                        <option value="todas" {% if accion_filtro == 'todas' %}selected{% endif %}>Todas las acciones</option>
+                        {% for accion in acciones_unicas %}
+                        <option value="{{ accion }}" {% if accion_filtro == accion %}selected{% endif %}>
+                            {{ accion }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <select name="usuario" class="form-select">
+                        <option value="todos" {% if usuario_filtro == 'todos' %}selected{% endif %}>Todos los usuarios</option>
+                        {% for usuario in usuarios_unicos %}
+                        <option value="{{ usuario.username }}" {% if usuario_filtro == usuario.username %}selected{% endif %}>
+                            {{ usuario.nombre_completo }} ({{ usuario.username }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 2fr; margin-top: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" 
+                           name="fecha_desde" 
+                           class="form-input"
+                           value="{{ fecha_desde }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" 
+                           name="fecha_hasta" 
+                           class="form-input"
+                           value="{{ fecha_hasta }}">
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: flex-end; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        Aplicar Filtros
+                    </button>
+                    <a href="{% url 'auditoria:historial_auditoria' %}" class="btn btn-secondary" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        Limpiar
+                    </a>
+                    <a href="{% url 'auditoria:exportar_json' %}?{{ request.GET.urlencode }}" 
+                       class="btn btn-success" 
+                       style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Exportar JSON
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Auditoría -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 600; margin: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Historial de Auditoría del Sistema
+            </h3>
+            <span style="font-size: 14px; color: var(--gray-600);">
+                Mostrando {{ total_filtrados }} de {{ total_eventos }} eventos
+            </span>
+        </div>
+
+        {% if logs %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">Fecha/Hora</th>
+                        <th style="width: 150px;">Usuario</th>
+                        <th style="width: 200px;">Acción</th>
+                        <th>Detalle</th>
+                        <th style="width: 120px;">IP</th>
+                        <th style="width: 100px;">Tabla</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td style="font-size: 13px;">
+                            {{ log.fecha_accion|date:"d/m/Y H:i:s" }}
+                        </td>
+                        <td>
+                            <strong>{{ log.usuario.nombre_completo|truncatewords:2 }}</strong>
+                            <br>
+                            <span style="font-size: 12px; color: var(--gray-500);">@{{ log.usuario.username }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" style="
+                                {% if 'LOGIN' in log.accion %}
+                                    background: #dbeafe; color: #1e40af;
+                                {% elif 'CREATE' in log.accion or 'CREAR' in log.accion %}
+                                    background: #d1fae5; color: #065f46;
+                                {% elif 'UPDATE' in log.accion or 'MODIFICAR' in log.accion or 'EDITAR' in log.accion %}
+                                    background: #fef3c7; color: #92400e;
+                                {% elif 'DELETE' in log.accion or 'ELIMINAR' in log.accion %}
+                                    background: #fee2e2; color: #991b1b;
+                                {% elif 'EXPORTAR' in log.accion or 'GENERAR' in log.accion %}
+                                    background: #fce7f3; color: #9f1239;
+                                {% elif 'CORRECCION' in log.accion %}
+                                    background: #f3e8ff; color: #6b21a8;
+                                {% else %}
+                                    background: #f3f4f6; color: #374151;
+                                {% endif %}
+                                font-size: 11px;
+                                padding: 4px 8px;
+                                border-radius: 4px;
+                                font-weight: 600;
+                                white-space: nowrap;
+                            ">
+                                {{ log.accion }}
+                            </span>
+                        </td>
+                        <td style="font-size: 13px; max-width: 400px;">
+                            {{ log.detalles_descifrados|truncatewords:15|default:"Sin detalles" }}
+                        </td>
+                        <td style="font-size: 12px; color: var(--gray-600); font-family: monospace;">
+                            {{ log.ip_usuario|default:"-" }}
+                        </td>
+                        <td style="font-size: 12px;">
+                            {% if log.tabla_afectada %}
+                            <span class="badge badge-blue">
+                                {{ log.tabla_afectada }}
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: var(--gray-500);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.3;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p style="font-size: 16px; font-weight: 500;">No se encontraron eventos con los filtros aplicados</p>
+            <p style="font-size: 14px; margin-top: 8px;">Intente modificar los criterios de búsqueda</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Acciones más frecuentes -->
+    {% if acciones_frecuentes %}
+    <div class="card" style="margin-top: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-purple);">
+                <path d="M3 3v18h18"/>
+                <rect x="7" y="10" width="3" height="9"/>
+                <rect x="14" y="5" width="3" height="14"/>
+            </svg>
+            Top 10 Acciones Más Frecuentes
+        </h3>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Acción</th>
+                        <th>Frecuencia</th>
+                        <th>Distribución</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for accion in acciones_frecuentes %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ forloop.counter }}</td>
+                        <td>
+                            <span class="badge badge-blue">{{ accion.accion }}</span>
+                        </td>
+                        <td style="font-weight: 600; font-size: 16px;">
+                            {{ accion.total }}
+                        </td>
+                        <td>
+                            <div style="width: 100%; max-width: 300px; background: #e5e7eb; height: 24px; border-radius: 4px; overflow: hidden;">
+                                <div style="
+                                    width: {% widthratio accion.total acciones_frecuentes.0.total 100 %}%;
+                                    height: 100%;
+                                    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: flex-end;
+                                    padding-right: 8px;
+                                    color: white;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                ">
+                                    {% widthratio accion.total total_eventos 100 %}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información Legal -->
+    <div class="card" style="margin-top: 24px; background: #fef3c7; border-left: 4px solid #f59e0b;">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b; flex-shrink: 0;">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <div>
+                <p style="font-weight: 600; color: #92400e; margin-bottom: 8px;">
+                    Trazabilidad Total - Ley 20.584
+                </p>
+                <ul style="font-size: 14px; color: #92400e; list-style: disc; margin-left: 20px; line-height: 1.6;">
+                    <li>Todos los eventos quedan registrados permanentemente</li>
+                    <li>No se puede eliminar ni modificar el historial de auditoría</li>
+                    <li>Los intentos de acceso denegado también quedan registrados</li>
+                    <li>Como Admin Sistema, NO tiene acceso a datos clínicos de pacientes</li>
+                    <li>Máximo 500 eventos mostrados simultáneamente por rendimiento</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
