@@ -14,7 +14,7 @@ import csv
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from utils.pdf_utils import render_to_pdf
-
+from accounts.views import get_client_ip
 
 @login_required
 def reporte_menu(request):
@@ -270,41 +270,40 @@ def exportar_excel(request):
 
 @login_required
 def generar_brazalete_pdf(request, pk):
+    """
+    Vista para generar brazalete PDF usando ReportLab
+    """
     parto = get_object_or_404(Parto, pk=pk)
     madre = parto.madre
-    rn = parto.recien_nacidos.first() # Asumiendo un RN
+    rn = parto.recien_nacidos.first()
 
     if not rn:
         messages.error(request, 'Este parto aún no tiene un recién nacido registrado.')
         return redirect('core:parto_detail', pk=parto.pk)
 
-    # (React: tienePermiso('generarBrazalete'))
-    # Usamos el permiso del modelo Rol de Django
-    if not request.user.puede_crear_partos: 
+    # Verificar permisos
+    if not request.user.puede_crear_partos:
         messages.error(request, 'No tiene permisos para generar brazaletes.')
         return redirect('core:parto_detail', pk=parto.pk)
 
-    context = {
-        'parto': parto,
-        'madre': madre,
-        'rn': rn
-    }
-
-    pdf_response = render_to_pdf('reportes/pdf_brazalete.html', context)
+    # Generar PDF usando ReportLab
+    from utils.pdf_utils import generar_brazalete_pdf as generar_pdf
     
-    if not pdf_response:
-        messages.error(request, 'Hubo un error al generar el documento PDF.')
-        return redirect('core:parto_detail', pk=parto.pk)
-    # --- FIN NUEVA LÓGICA ---
-
-    # Asignamos el nombre al archivo
+    pdf = generar_pdf(parto, madre, rn)
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(pdf, content_type='application/pdf')
     nombre_archivo = f'brazalete-{rn.rut_provisorio or rn.id}.pdf'
-    pdf_response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
     
+    # Registrar en auditoría
     LogAuditoria.registrar(
         usuario=request.user,
         accion='GENERAR_PDF_BRAZALETE',
         tabla_afectada='Parto',
-        registro_id=parto.id
+        registro_id=parto.id,
+        detalles=f'Brazalete generado para RN: {rn.rut_provisorio or rn.id}',
+        ip=get_client_ip(request)
     )
-    return pdf_response
+    
+    return response
