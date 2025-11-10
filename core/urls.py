@@ -1,3 +1,4 @@
+# core/urls.py
 """
 URLs de la aplicación core
 """
@@ -38,4 +39,9 @@ urlpatterns = [
 
     # Epicrisis URLs
     path('parto/<uuid:pk>/epicrisis/', views.crear_epicrisis, name='crear_epicrisis'),
+    
+    # Partograma URLs - NUEVAS RUTAS
+    path('partogramas/', views.partograma_list, name='partograma_list'),
+    path('parto/<uuid:parto_pk>/partograma/crear/', views.partograma_create, name='partograma_create'),
+    path('parto/<uuid:parto_pk>/partograma/editar/', views.partograma_update, name='partograma_update'),
 ]

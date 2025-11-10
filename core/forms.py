@@ -8,7 +8,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, Indicacion
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
-
+from datetime import datetime
 
 class MadreForm(forms.ModelForm):
     """
@@ -392,3 +392,106 @@ IndicacionFormSet = inlineformset_factory(
     can_delete=True,
     fk_name='parto'
 )
+
+class PartogramaForm(forms.Form):
+    """
+    Formulario para registrar datos del partograma
+    Los datos se guardan en formato JSON en Parto.partograma_data
+    """
+    
+    # Información General
+    hora_inicio = forms.TimeField(
+        label='Hora de Inicio',
+        widget=forms.TimeInput(attrs={
+            'class': 'form-input',
+            'type': 'time'
+        }),
+        required=True
+    )
+    
+    # Dilatación cervical (array de mediciones)
+    dilatacion_cm = forms.CharField(
+        label='Dilatación (cm) - separado por comas',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '0-10, 0-10, ...'
+        }),
+        required=False,
+        help_text='Ejemplo: 0-10, 1-9, 2-8 (hora-dilatación)'
+    )
+    
+    # Frecuencia Cardíaca Fetal (array de mediciones)
+    fcf_latidos = forms.CharField(
+        label='FCF (lat/min) - separado por comas',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '110-160, 110-160, ...'
+        }),
+        required=False,
+        help_text='Ejemplo: 110-160, 115-158 (hora-latidos)'
+    )
+    
+    # Contracciones (en 10 min)
+    contracciones = forms.CharField(
+        label='Contracciones (10 min) - separado por comas',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '0-5, 0-5, ...'
+        }),
+        required=False,
+        help_text='Ejemplo: 0-5, 1-4 (hora-cantidad)'
+    )
+    
+    # Presión Arterial
+    presion_arterial = forms.CharField(
+        label='Presión Arterial - separado por comas',
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '120/80, 120/80, ...'
+        }),
+        required=False,
+        help_text='Ejemplo: 120/80, 118/78 (hora-presión)'
+    )
+    
+    # Observaciones clínicas
+    observaciones_clinicas = forms.CharField(
+        label='Observaciones Clínicas',
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'rows': 4,
+            'placeholder': 'Observaciones clínicas durante el trabajo de parto'
+        }),
+        required=False
+    )
+    
+    def clean(self):
+        """Validar que al menos haya un dato registrado"""
+        cleaned_data = super().clean()
+        
+        # Verificar que al menos uno de los campos tenga datos
+        tiene_datos = any([
+            cleaned_data.get('dilatacion_cm'),
+            cleaned_data.get('fcf_latidos'),
+            cleaned_data.get('contracciones'),
+            cleaned_data.get('presion_arterial'),
+            cleaned_data.get('observaciones_clinicas')
+        ])
+        
+        if not tiene_datos:
+            raise ValidationError('Debe registrar al menos un tipo de dato en el partograma')
+        
+        return cleaned_data
+    
+    def to_json(self):
+        """
+        Convierte los datos del formulario a formato JSON para guardar en BD
+        """
+        return {
+            'hora_inicio': self.cleaned_data.get('hora_inicio').strftime('%H:%M') if self.cleaned_data.get('hora_inicio') else None,
+            'dilatacion_cm': self.cleaned_data.get('dilatacion_cm', ''),
+            'fcf_latidos': self.cleaned_data.get('fcf_latidos', ''),
+            'contracciones': self.cleaned_data.get('contracciones', ''),
+            'presion_arterial': self.cleaned_data.get('presion_arterial', ''),
+            'observaciones_clinicas': self.cleaned_data.get('observaciones_clinicas', ''),
+            'fecha_registro': datetime.now().isoformat()
+        }

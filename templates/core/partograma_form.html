@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 1000px; margin: 0 auto;">
+    <div class="card">
+        <h2 class="card-header">{{ title }}</h2>
+
+        <!-- Información de la madre -->
+        <div style="background: #e0f2fe; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary-blue);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <h3 style="font-size: 16px; font-weight: 600; color: var(--gray-900); margin: 0;">
+                    Madre: {{ parto.madre.nombre_descifrado }}
+                </h3>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size: 14px; color: var(--gray-700); margin-top: 12px;">
+                <div>
+                    <strong>RUT:</strong> {{ parto.madre.rut_descifrado }}
+                </div>
+                <div>
+                    <strong>Tipo Parto:</strong> 
+                    <span class="badge {% if 'Cesárea' in parto.tipo_parto %}badge-yellow{% else %}badge-green{% endif %}">
+                        {{ parto.tipo_parto }}
+                    </span>
+                </div>
+                <div>
+                    <strong>Fecha:</strong> {{ parto.fecha_parto|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Hora de Inicio -->
+            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--gray-200);">
+                <h3 style="font-size: 18px; font-weight: 600; color: var(--gray-900); margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Información General
+                </h3>
+                
+                <div class="form-group">
+                    <label for="{{ form.hora_inicio.id_for_label }}" class="form-label required">
+                        {{ form.hora_inicio.label }}
+                    </label>
+                    {{ form.hora_inicio }}
+                    <p class="form-hint">Hora en que se inicia el registro del partograma (fase activa ≥4 cm)</p>
+                    {% if form.hora_inicio.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.hora_inicio.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Mediciones del Trabajo de Parto -->
+            <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #10b981;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #065f46; margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: #10b981;">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    Mediciones del Trabajo de Parto
+                </h3>
+
+                <!-- Dilatación Cervical -->
+                <div class="form-group">
+                    <label for="{{ form.dilatacion_cm.id_for_label }}" class="form-label">
+                        {{ form.dilatacion_cm.label }}
+                    </label>
+                    {{ form.dilatacion_cm }}
+                    <p class="form-hint">{{ form.dilatacion_cm.help_text }}</p>
+                    {% if form.dilatacion_cm.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.dilatacion_cm.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Frecuencia Cardíaca Fetal -->
+                <div class="form-group">
+                    <label for="{{ form.fcf_latidos.id_for_label }}" class="form-label">
+                        {{ form.fcf_latidos.label }}
+                    </label>
+                    {{ form.fcf_latidos }}
+                    <p class="form-hint">{{ form.fcf_latidos.help_text }}</p>
+                    {% if form.fcf_latidos.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.fcf_latidos.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Contracciones -->
+                <div class="form-group">
+                    <label for="{{ form.contracciones.id_for_label }}" class="form-label">
+                        {{ form.contracciones.label }}
+                    </label>
+                    {{ form.contracciones }}
+                    <p class="form-hint">{{ form.contracciones.help_text }}</p>
+                    {% if form.contracciones.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.contracciones.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Presión Arterial -->
+                <div class="form-group">
+                    <label for="{{ form.presion_arterial.id_for_label }}" class="form-label">
+                        {{ form.presion_arterial.label }}
+                    </label>
+                    {{ form.presion_arterial }}
+                    <p class="form-hint">{{ form.presion_arterial.help_text }}</p>
+                    {% if form.presion_arterial.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.presion_arterial.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Observaciones Clínicas -->
+            <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #f59e0b;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #92400e; margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: #f59e0b;">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Observaciones Clínicas
+                </h3>
+                
+                <div class="form-group">
+                    <label for="{{ form.observaciones_clinicas.id_for_label }}" class="form-label">
+                        {{ form.observaciones_clinicas.label }}
+                    </label>
+                    {{ form.observaciones_clinicas }}
+                    {% if form.observaciones_clinicas.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.observaciones_clinicas.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información importante -->
+            <div style="background: #dbeafe; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary-blue);">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-blue); flex-shrink: 0;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <div>
+                        <p style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                            Criterios Importantes del Partograma OMS
+                        </p>
+                        <ul style="font-size: 14px; color: #1e40af; list-style: disc; margin-left: 20px; line-height: 1.8;">
+                            <li><strong>Fase Activa:</strong> Iniciar registro cuando dilatación ≥ 4 cm</li>
+                            <li><strong>Frecuencia FCF:</strong> Rango normal 110-160 lat/min</li>
+                            <li><strong>Alerta:</strong> Dilatación < 1 cm/hora requiere evaluación médica</li>
+                            <li><strong>Línea de Acción:</strong> 4 horas a la derecha de línea de alerta</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="btn-group">
+                <a href="{% url 'core:partograma_list' %}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    {% if is_edit %}Actualizar Partograma{% else %}Guardar Partograma{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Validación en tiempo real de formato de datos
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar formato de dilatación
+    const dilatacionInput = document.getElementById('{{ form.dilatacion_cm.id_for_label }}');
+    if (dilatacionInput) {
+        dilatacionInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && !validateMeasurementFormat(value)) {
+                this.style.borderColor = 'var(--primary-red)';
+                showError(this, 'Formato incorrecto. Use: hora-valor, hora-valor (ej: 0-10, 1-9)');
+            } else {
+                this.style.borderColor = '';
+                hideError(this);
+            }
+        });
+    }
+
+    // Validar formato de FCF
+    const fcfInput = document.getElementById('{{ form.fcf_latidos.id_for_label }}');
+    if (fcfInput) {
+        fcfInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && !validateMeasurementFormat(value)) {
+                this.style.borderColor = 'var(--primary-red)';
+                showError(this, 'Formato incorrecto. Use: hora-latidos, hora-latidos (ej: 110-160, 115-158)');
+            } else {
+                this.style.borderColor = '';
+                hideError(this);
+            }
+        });
+    }
+
+    function validateMeasurementFormat(value) {
+        // Formato: número-número, número-número, etc.
+        const regex = /^\d+-\d+(,\s*\d+-\d+)*$/;
+        return regex.test(value);
+    }
+
+    function showError(input, message) {
+        hideError(input);
+        const error = document.createElement('p');
+        error.className = 'validation-error';
+        error.style.color = 'var(--primary-red)';
+        error.style.fontSize = '13px';
+        error.style.marginTop = '4px';
+        error.textContent = message;
+        input.parentElement.appendChild(error);
+    }
+
+    function hideError(input) {
+        const existingError = input.parentElement.querySelector('.validation-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

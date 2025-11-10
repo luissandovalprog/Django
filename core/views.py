@@ -10,7 +10,7 @@ from django.db.models import Count, Q
 from datetime import datetime, timedelta
 from django.utils import timezone
 from .models import Madre, Parto, RecienNacido, Correccion, Indicacion
-from .forms import MadreForm, PartoForm, RecienNacidoForm, CorreccionForm, EpicrisisForm, IndicacionFormSet
+from .forms import MadreForm, PartoForm, RecienNacidoForm, CorreccionForm, EpicrisisForm, IndicacionFormSet, PartogramaForm
 from auditoria.models import LogAuditoria
 from utils.crypto import crypto_service
 
@@ -691,3 +691,201 @@ def registrar_parto_completo(request, madre_pk):
         'madre': madre
     }
     return render(request, 'core/parto_completo_form.html', context)
+
+@login_required
+def partograma_list(request):
+    """
+    Vista de listado de partogramas (pantalla principal)
+    Muestra todas las madres que tienen partos
+    """
+    if not request.user.puede_crear_partos:
+        messages.error(request, 'No tiene permisos para acceder a partogramas')
+        return redirect('core:dashboard')
+    
+    # Obtener búsqueda
+    busqueda_query = request.GET.get('busqueda', '')
+    
+    # Lógica de permisos
+    if request.user.puede_ver_todos_partos:
+        madres_qs = Madre.objects.filter(partos__isnull=False).distinct()
+    else:
+        madres_qs = Madre.objects.filter(
+            partos__usuario_registro=request.user
+        ).distinct()
+    
+    # Aplicar búsqueda
+    if busqueda_query:
+        madres_qs = madres_qs.filter(
+            Q(rut_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(nombre_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(ficha_clinica_numero__icontains=busqueda_query)
+        )
+    
+    # Descifrar datos y agregar información de partos
+    madres = []
+    for madre in madres_qs:
+        madre.nombre_descifrado = madre.get_nombre()
+        madre.rut_descifrado = madre.get_rut()
+        
+        # Obtener el último parto de esta madre
+        if request.user.puede_ver_todos_partos:
+            ultimo_parto = madre.partos.order_by('-fecha_parto').first()
+        else:
+            ultimo_parto = madre.partos.filter(
+                usuario_registro=request.user
+            ).order_by('-fecha_parto').first()
+        
+        if ultimo_parto:
+            madre.ultimo_parto = ultimo_parto
+            madre.tiene_partograma = bool(ultimo_parto.partograma_data)
+            madres.append(madre)
+    
+    context = {
+        'madres': madres,
+        'busqueda_query': busqueda_query,
+    }
+    
+    return render(request, 'core/partograma_list.html', context)
+
+
+@login_required
+def partograma_create(request, parto_pk):
+    """
+    Vista para crear un nuevo partograma
+    """
+    parto = get_object_or_404(Parto, pk=parto_pk)
+    
+    # Verificar permisos
+    if not request.user.puede_crear_partos:
+        messages.error(request, 'No tiene permisos para crear partogramas')
+        return redirect('core:parto_detail', pk=parto_pk)
+    
+    # Verificar acceso al parto
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tiene permiso para acceder a este parto')
+        return redirect('core:dashboard')
+    
+    # Verificar si ya existe un partograma
+    if parto.partograma_data:
+        messages.warning(request, 'Este parto ya tiene un partograma. Use la opción de editar.')
+        return redirect('core:partograma_update', parto_pk=parto_pk)
+    
+    if request.method == 'POST':
+        form = PartogramaForm(request.POST)
+        if form.is_valid():
+            # Guardar datos en formato JSON
+            parto.partograma_data = form.to_json()
+            parto.save()
+            
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREATE_PARTOGRAMA',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f'Partograma creado para parto {parto.id} - Madre: {parto.madre.get_nombre()}',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Partograma registrado exitosamente')
+            return redirect('core:parto_detail', pk=parto_pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = PartogramaForm()
+    
+    # Descifrar datos de la madre
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+    
+    context = {
+        'form': form,
+        'parto': parto,
+        'title': 'Crear Partograma'
+    }
+    
+    return render(request, 'core/partograma_form.html', context)
+
+
+@login_required
+def partograma_update(request, parto_pk):
+    """
+    Vista para editar un partograma existente
+    """
+    parto = get_object_or_404(Parto, pk=parto_pk)
+    
+    # Verificar permisos
+    if not request.user.puede_editar_partos:
+        messages.error(request, 'No tiene permisos para editar partogramas')
+        return redirect('core:parto_detail', pk=parto_pk)
+    
+    # Verificar acceso al parto
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tiene permiso para acceder a este parto')
+        return redirect('core:dashboard')
+    
+    # Verificar si existe un partograma
+    if not parto.partograma_data:
+        messages.warning(request, 'Este parto no tiene un partograma. Use la opción de crear.')
+        return redirect('core:partograma_create', parto_pk=parto_pk)
+    
+    if request.method == 'POST':
+        form = PartogramaForm(request.POST)
+        if form.is_valid():
+            # Actualizar datos en formato JSON
+            parto.partograma_data = form.to_json()
+            parto.save()
+            
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='UPDATE_PARTOGRAMA',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f'Partograma actualizado para parto {parto.id}',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Partograma actualizado exitosamente')
+            return redirect('core:parto_detail', pk=parto_pk)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        # Cargar datos existentes
+        initial_data = {}
+        if parto.partograma_data:
+            from datetime import datetime as dt
+            partograma = parto.partograma_data
+            
+            # Convertir hora_inicio de string a objeto time
+            if partograma.get('hora_inicio'):
+                try:
+                    hora = dt.strptime(partograma['hora_inicio'], '%H:%M').time()
+                    initial_data['hora_inicio'] = hora
+                except:
+                    pass
+            
+            initial_data['dilatacion_cm'] = partograma.get('dilatacion_cm', '')
+            initial_data['fcf_latidos'] = partograma.get('fcf_latidos', '')
+            initial_data['contracciones'] = partograma.get('contracciones', '')
+            initial_data['presion_arterial'] = partograma.get('presion_arterial', '')
+            initial_data['observaciones_clinicas'] = partograma.get('observaciones_clinicas', '')
+        
+        form = PartogramaForm(initial=initial_data)
+    
+    # Descifrar datos de la madre
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+    
+    context = {
+        'form': form,
+        'parto': parto,
+        'title': 'Editar Partograma',
+        'is_edit': True
+    }
+    
+    return render(request, 'core/partograma_form.html', context)
