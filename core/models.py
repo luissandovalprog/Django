@@ -274,7 +274,7 @@ class Correccion(models.Model):
 
 
 class Indicacion(models.Model):
-    """Modelo de Indicaciones Médicas (sin cambios necesarios)"""
+    """Modelo de Indicaciones Médicas"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     parto = models.ForeignKey(Parto, on_delete=models.CASCADE, related_name='indicaciones')
 
@@ -290,10 +290,11 @@ class Indicacion(models.Model):
     dosis = models.CharField(max_length=100, blank=True, null=True)
     via = models.CharField(max_length=100, blank=True, null=True)
     frecuencia = models.CharField(max_length=100, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)  # AGREGAR ESTE CAMPO
 
     class Meta:
         db_table = 'Indicacion'
-        ordering = ['-parto__fecha_parto']
+        ordering = ['-timestamp']  # CAMBIAR EL ORDERING
 
     def __str__(self):
         return f"Indicación ({self.tipo}) para Parto {self.parto.id}"

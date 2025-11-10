@@ -41,6 +41,7 @@ urlpatterns = [
     path('epicrisis/', views.epicrisis_list, name='epicrisis_list'),
     path('parto/<uuid:pk>/epicrisis/crear/', views.crear_epicrisis, name='crear_epicrisis'),
     path('parto/<uuid:pk>/epicrisis/ver/', views.ver_epicrisis, name='ver_epicrisis'),
+    path('parto/<uuid:pk>/epicrisis/descargar/', views.descargar_epicrisis_pdf, name='descargar_epicrisis_pdf'),
     
     # Partograma URLs
     path('partogramas/', views.partograma_list, name='partograma_list'),

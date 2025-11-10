@@ -952,7 +952,7 @@ def crear_epicrisis(request, pk):
     parto = get_object_or_404(Parto, pk=pk)
 
     # Verificar permisos (solo médicos pueden crear epicrisis)
-    if not request.user.puede_anexar_correccion:  # Usamos el mismo permiso de médico
+    if not request.user.puede_anexar_correccion:
         messages.error(request, 'Solo los médicos pueden crear epicrisis.')
         return redirect('core:parto_detail', pk=parto.pk)
 
@@ -985,7 +985,7 @@ def crear_epicrisis(request, pk):
                 accion='CREAR_EPICRISIS',
                 tabla_afectada='Parto',
                 registro_id=parto.id,
-                detalles=f"Epicrisis creada para parto {parto.id} - Madre: {parto.madre.get_nombre()}",
+                detalles=f"Epicrisis creada para parto {parto.id} - Madre: {parto.madre.get_nombre()} - {formset.total_form_count()} indicaciones",
                 ip=get_client_ip(request)
             )
             
@@ -994,14 +994,24 @@ def crear_epicrisis(request, pk):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    messages.error(request, f'Epicrisis - {field}: {error}')
             for form_errors in formset.errors:
                 for field, errors in form_errors.items():
                     for error in errors:
                         messages.error(request, f'Indicación - {field}: {error}')
     else:
         # Cargar datos existentes si ya hay epicrisis
-        initial_data = parto.epicrisis_data if parto.epicrisis_data else {}
+        initial_data = {}
+        if parto.epicrisis_data:
+            initial_data = {
+                'motivo_ingreso': parto.epicrisis_data.get('motivo_ingreso', ''),
+                'resumen_evolucion': parto.epicrisis_data.get('resumen_evolucion', ''),
+                'diagnostico_egreso': parto.epicrisis_data.get('diagnostico_egreso', ''),
+                'condicion_egreso': parto.epicrisis_data.get('condicion_egreso', 'buena'),
+                'control_posterior': parto.epicrisis_data.get('control_posterior', ''),
+                'indicaciones_alta': parto.epicrisis_data.get('indicaciones_alta', ''),
+                'observaciones': parto.epicrisis_data.get('observaciones', ''),
+            }
         form = EpicrisisForm(initial=initial_data)
         formset = IndicacionFormSet(instance=parto, prefix='indicaciones')
 
@@ -1014,7 +1024,7 @@ def crear_epicrisis(request, pk):
         'formset': formset,
         'parto': parto,
         'madre': parto.madre,
-        'title': 'Epicrisis e Indicaciones Médicas'
+        'title': 'Editar Epicrisis' if parto.epicrisis_data else 'Crear Epicrisis'
     }
 
     return render(request, 'core/epicrisis_form.html', context)
@@ -1052,3 +1062,59 @@ def ver_epicrisis(request, pk):
     }
     
     return render(request, 'core/epicrisis_ver.html', context)
+
+@login_required
+def descargar_epicrisis_pdf(request, pk):
+    """
+    Vista para descargar epicrisis en PDF
+    """
+    parto = get_object_or_404(Parto, pk=pk)
+    madre = parto.madre
+    
+    # Verificar permisos
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tiene permiso para acceder a este registro')
+        return redirect('core:epicrisis_list')
+    
+    # Verificar que existe epicrisis
+    if not parto.epicrisis_data:
+        messages.error(request, 'Este parto no tiene epicrisis registrada')
+        return redirect('core:epicrisis_list')
+    
+    # Preparar datos para el PDF
+    epicrisis_completa = {
+        'epicrisis': parto.epicrisis_data,
+        'indicaciones': []
+    }
+    
+    # Obtener indicaciones
+    for indicacion in parto.indicaciones.all():
+        epicrisis_completa['indicaciones'].append({
+            'tipo': indicacion.get_tipo_display(),
+            'descripcion': indicacion.descripcion,
+            'dosis': indicacion.dosis,
+            'via': indicacion.via,
+            'frecuencia': indicacion.frecuencia
+        })
+    
+    # Generar PDF
+    from utils.pdf_utils import generar_epicrisis_pdf
+    
+    pdf = generar_epicrisis_pdf(parto, madre, epicrisis_completa)
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(pdf, content_type='application/pdf')
+    nombre_archivo = f'epicrisis-{madre.get_rut() or parto.id}.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    
+    # Registrar en auditoría
+    LogAuditoria.registrar(
+        usuario=request.user,
+        accion='DESCARGAR_EPICRISIS_PDF',
+        tabla_afectada='Parto',
+        registro_id=parto.id,
+        detalles=f'Epicrisis PDF descargada para madre: {madre.get_nombre()}',
+        ip=get_client_ip(request)
+    )
+    
+    return response
