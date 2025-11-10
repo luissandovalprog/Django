@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Epicrisis{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Gestión de Epicrisis
+                </h2>
+                <p style="color: var(--gray-600); font-size: 14px;">
+                    Registro electrónico de epicrisis e indicaciones al alta
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="search-container">
+        <form method="get" action="{% url 'core:epicrisis_list' %}">
+            <div class="search-input-wrapper">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" 
+                       name="busqueda" 
+                       class="search-input" 
+                       placeholder="Buscar por RUT, nombre o ficha clínica..."
+                       value="{{ busqueda_query|default:'' }}">
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Madres -->
+    <div class="card">
+        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Seleccionar Madre para Epicrisis
+        </h3>
+
+        {% if madres %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>NOMBRE</th>
+                        <th>RUT</th>
+                        <th>FICHA CLÍNICA</th>
+                        <th>FECHA ÚLTIMO PARTO</th>
+                        <th>TIPO PARTO</th>
+                        <th>ESTADO EPICRISIS</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for madre in madres %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ madre.nombre_descifrado|default:"N/A" }}</td>
+                        <td>{{ madre.rut_descifrado|default:"N/A" }}</td>
+                        <td>{{ madre.ficha_clinica_numero|default:"Sin ficha" }}</td>
+                        <td>{{ madre.ultimo_parto.fecha_parto|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="badge {% if 'Cesárea' in madre.ultimo_parto.tipo_parto %}badge-yellow{% else %}badge-green{% endif %}">
+                                {{ madre.ultimo_parto.tipo_parto }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if madre.tiene_epicrisis %}
+                            <span class="badge badge-green">
+                                ✓ Completo
+                            </span>
+                            {% else %}
+                            <span class="badge badge-red">
+                                ✕ Pendiente
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if madre.tiene_epicrisis %}
+                            <a href="{% url 'core:ver_epicrisis' madre.ultimo_parto.pk %}" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                Ver Epicrisis
+                            </a>
+                            {% else %}
+                            <a href="{% url 'core:crear_epicrisis' madre.ultimo_parto.pk %}" class="btn btn-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Crear Epicrisis
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: var(--gray-500);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.3;">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <p style="font-size: 16px; font-weight: 500;">No hay partos registrados</p>
+            <p style="font-size: 14px; margin-top: 8px;">Intente modificar los criterios de búsqueda o registre un nuevo parto</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Información -->
+    <div class="card" style="margin-top: 24px; background: #dbeafe; border-left: 4px solid var(--primary-blue);">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-blue); flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+                <p style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                    Epicrisis Electrónica - Normativa MINSAL
+                </p>
+                <ul style="font-size: 14px; color: #1e40af; list-style: disc; margin-left: 20px; line-height: 1.8;">
+                    <li>La epicrisis debe completarse <strong>antes del alta del paciente</strong></li>
+                    <li>Solo <strong>médicos</strong> pueden crear y modificar epicrisis</li>
+                    <li>Incluye: Resumen evolución, diagnóstico egreso, indicaciones al alta</li>
+                    <li>Todos los cambios quedan registrados en auditoría</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

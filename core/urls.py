@@ -37,10 +37,12 @@ urlpatterns = [
     # Corrección URLs
     path('parto/<uuid:pk>/corregir/', views.anexar_correccion, name='anexar_correccion'),
 
-    # Epicrisis URLs
-    path('parto/<uuid:pk>/epicrisis/', views.crear_epicrisis, name='crear_epicrisis'),
+    # Epicrisis URLs - NUEVAS RUTAS
+    path('epicrisis/', views.epicrisis_list, name='epicrisis_list'),
+    path('parto/<uuid:pk>/epicrisis/crear/', views.crear_epicrisis, name='crear_epicrisis'),
+    path('parto/<uuid:pk>/epicrisis/ver/', views.ver_epicrisis, name='ver_epicrisis'),
     
-    # Partograma URLs - NUEVAS RUTAS
+    # Partograma URLs
     path('partogramas/', views.partograma_list, name='partograma_list'),
     path('parto/<uuid:parto_pk>/partograma/crear/', views.partograma_create, name='partograma_create'),
     path('parto/<uuid:parto_pk>/partograma/editar/', views.partograma_update, name='partograma_update'),

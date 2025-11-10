@@ -889,3 +889,166 @@ def partograma_update(request, parto_pk):
     }
     
     return render(request, 'core/partograma_form.html', context)
+
+@login_required
+def epicrisis_list(request):
+    """
+    Vista de listado de epicrisis (pantalla principal)
+    Muestra todas las madres que tienen partos
+    """
+    if not request.user.puede_crear_partos:
+        messages.error(request, 'No tiene permisos para acceder a epicrisis')
+        return redirect('core:dashboard')
+    
+    # Obtener búsqueda
+    busqueda_query = request.GET.get('busqueda', '')
+    
+    # Lógica de permisos
+    if request.user.puede_ver_todos_partos:
+        madres_qs = Madre.objects.filter(partos__isnull=False).distinct()
+    else:
+        madres_qs = Madre.objects.filter(
+            partos__usuario_registro=request.user
+        ).distinct()
+    
+    # Aplicar búsqueda
+    if busqueda_query:
+        madres_qs = madres_qs.filter(
+            Q(rut_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(nombre_hash=crypto_service.hash_data(busqueda_query)) |
+            Q(ficha_clinica_numero__icontains=busqueda_query)
+        )
+    
+    # Descifrar datos y agregar información de partos
+    madres = []
+    for madre in madres_qs:
+        madre.nombre_descifrado = madre.get_nombre()
+        madre.rut_descifrado = madre.get_rut()
+        
+        # Obtener el último parto de esta madre
+        if request.user.puede_ver_todos_partos:
+            ultimo_parto = madre.partos.order_by('-fecha_parto').first()
+        else:
+            ultimo_parto = madre.partos.filter(
+                usuario_registro=request.user
+            ).order_by('-fecha_parto').first()
+        
+        if ultimo_parto:
+            madre.ultimo_parto = ultimo_parto
+            madre.tiene_epicrisis = bool(ultimo_parto.epicrisis_data)
+            madres.append(madre)
+    
+    context = {
+        'madres': madres,
+        'busqueda_query': busqueda_query,
+    }
+    
+    return render(request, 'core/epicrisis_list.html', context)
+
+
+@login_required
+def crear_epicrisis(request, pk):
+    """Crear epicrisis e indicaciones (solo médicos)"""
+    parto = get_object_or_404(Parto, pk=pk)
+
+    # Verificar permisos (solo médicos pueden crear epicrisis)
+    if not request.user.puede_anexar_correccion:  # Usamos el mismo permiso de médico
+        messages.error(request, 'Solo los médicos pueden crear epicrisis.')
+        return redirect('core:parto_detail', pk=parto.pk)
+
+    if request.method == 'POST':
+        form = EpicrisisForm(request.POST)
+        formset = IndicacionFormSet(request.POST, instance=parto, prefix='indicaciones')
+
+        if form.is_valid() and formset.is_valid():
+            # Guardar datos de epicrisis en el JSONField
+            parto.epicrisis_data = {
+                'motivo_ingreso': form.cleaned_data.get('motivo_ingreso', ''),
+                'resumen_evolucion': form.cleaned_data.get('resumen_evolucion', ''),
+                'diagnostico_egreso': form.cleaned_data.get('diagnostico_egreso', ''),
+                'condicion_egreso': form.cleaned_data.get('condicion_egreso', ''),
+                'control_posterior': form.cleaned_data.get('control_posterior', ''),
+                'indicaciones_alta': form.cleaned_data.get('indicaciones_alta', ''),
+                'observaciones': form.cleaned_data.get('observaciones', ''),
+                'medico_id': str(request.user.pk),
+                'medico_nombre': request.user.nombre_completo,
+                'fecha_creacion': timezone.now().isoformat()
+            }
+            parto.save()
+
+            # Guardar el formset de indicaciones
+            formset.save()
+
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREAR_EPICRISIS',
+                tabla_afectada='Parto',
+                registro_id=parto.id,
+                detalles=f"Epicrisis creada para parto {parto.id} - Madre: {parto.madre.get_nombre()}",
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Epicrisis e indicaciones guardadas exitosamente.')
+            return redirect('core:epicrisis_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+            for form_errors in formset.errors:
+                for field, errors in form_errors.items():
+                    for error in errors:
+                        messages.error(request, f'Indicación - {field}: {error}')
+    else:
+        # Cargar datos existentes si ya hay epicrisis
+        initial_data = parto.epicrisis_data if parto.epicrisis_data else {}
+        form = EpicrisisForm(initial=initial_data)
+        formset = IndicacionFormSet(instance=parto, prefix='indicaciones')
+
+    # Descifrar datos de la madre
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+
+    context = {
+        'form': form,
+        'formset': formset,
+        'parto': parto,
+        'madre': parto.madre,
+        'title': 'Epicrisis e Indicaciones Médicas'
+    }
+
+    return render(request, 'core/epicrisis_form.html', context)
+
+
+@login_required
+def ver_epicrisis(request, pk):
+    """
+    Vista de solo lectura de una epicrisis
+    """
+    parto = get_object_or_404(Parto, pk=pk)
+    
+    # Verificar permisos
+    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
+        messages.error(request, 'No tiene permiso para ver este registro')
+        return redirect('core:epicrisis_list')
+    
+    # Verificar que existe epicrisis
+    if not parto.epicrisis_data:
+        messages.warning(request, 'Este parto no tiene epicrisis registrada')
+        return redirect('core:epicrisis_list')
+    
+    # Descifrar datos de la madre
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+    
+    # Obtener indicaciones
+    indicaciones = parto.indicaciones.all()
+    
+    context = {
+        'parto': parto,
+        'madre': parto.madre,
+        'epicrisis': parto.epicrisis_data,
+        'indicaciones': indicaciones,
+    }
+    
+    return render(request, 'core/epicrisis_ver.html', context)
