@@ -19,13 +19,10 @@ urlpatterns = [
     path('madre/<uuid:pk>/editar/', views.madre_update, name='madre_update'),
     
     # Parto URLs
-    path('parto/', views.parto_list, name='parto_list'),
     path('parto/crear/', views.parto_create, name='parto_create'),
     path('parto/<uuid:pk>/', views.parto_detail, name='parto_detail'),
     path('parto/<uuid:pk>/editar/', views.parto_update, name='parto_update'),
     
-    # Nueva ruta: Registrar parto para una madre específica
-    path('madre/<uuid:madre_pk>/registrar-parto/', views.registrar_parto_para_madre, name='registrar_parto_para_madre'),
     
     # Nueva ruta: Registrar parto completo (parto + RN) para una madre específica
     path('madre/<uuid:madre_pk>/registrar-parto-completo/', views.registrar_parto_completo, name='registrar_parto_completo'),

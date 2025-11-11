@@ -220,23 +220,6 @@ def madre_detail(request, pk):
 
 # ============= VISTAS DE PARTO =============
 
-@login_required
-def parto_list(request):
-    """Listado de partos"""
-    if request.user.puede_ver_todos_partos:
-        partos = Parto.objects.all()
-    else:
-        partos = Parto.objects.filter(usuario_registro=request.user)
-    
-    partos = partos.select_related('madre', 'usuario_registro').order_by('-fecha_parto')
-    
-    # Agregar nombres descifrados
-    for parto in partos:
-        parto.madre.nombre_descifrado = parto.madre.get_nombre()
-    
-    context = {'partos': partos}
-    return render(request, 'core/parto_list.html', context)
-
 
 @login_required
 def parto_create(request):
@@ -278,16 +261,6 @@ def parto_update(request, pk):
     """Actualizar parto existente"""
     parto = get_object_or_404(Parto, pk=pk)
     
-    # Verificar permisos
-    if not request.user.puede_editar_partos:
-        messages.error(request, 'No tienes permiso para editar registros de parto')
-        return redirect('core:parto_list')
-    
-    # Si no es supervisor, solo puede editar sus propios registros
-    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
-        messages.error(request, 'Solo puedes editar tus propios registros')
-        return redirect('core:parto_list')
-    
     if request.method == 'POST':
         form = PartoForm(request.POST, instance=parto, user=request.user)
         if form.is_valid():
@@ -320,11 +293,7 @@ def parto_update(request, pk):
 def parto_detail(request, pk):
     """Detalle de parto con recién nacidos"""
     parto = get_object_or_404(Parto, pk=pk)
-    
-    # Verificar permisos
-    if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
-        messages.error(request, 'No tienes permiso para ver este registro')
-        return redirect('core:parto_list')
+
     
     parto.madre.nombre_descifrado = parto.madre.get_nombre()
     parto.madre.rut_descifrado = parto.madre.get_rut()
