@@ -56,8 +56,6 @@ def login_view(request):
                     messages.error(request, 'Su cuenta está desactivada. Contacte al administrador.')
             else:
                 messages.error(request, 'Usuario o contraseña incorrectos')
-        else:
-            messages.error(request, 'Usuario o contraseña incorrectos')
     else:
         form = AuthenticationForm()
     

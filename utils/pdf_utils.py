@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 from django.http import HttpResponse
 from datetime import datetime
-
+from django.utils import timezone
 
 def generar_brazalete_pdf(parto, madre, rn):
     """
@@ -269,7 +269,7 @@ def generar_brazalete_pdf(parto, madre, rn):
     elements.append(Spacer(1, 3*mm))
     
     # Fecha de impresión
-    fecha_impresion = datetime.now().strftime('%d-%m-%Y, %H:%M:%S')
+    fecha_impresion = timezone.now().strftime('%d-%m-%Y, %H:%M:%S')
     elements.append(Paragraph(f'Fecha de impresión: {fecha_impresion}', small_style))
     elements.append(Spacer(1, 2*mm))
     
@@ -297,7 +297,7 @@ def _calcular_edad(fecha_nacimiento):
     if not fecha_nacimiento:
         return 0
     
-    hoy = datetime.now().date()
+    hoy = timezone.now().date()
     edad = hoy.year - fecha_nacimiento.year
     
     # Ajustar si aún no ha cumplido años este año
@@ -562,7 +562,7 @@ def generar_epicrisis_pdf(parto, madre, epicrisis_data):
     
     # FOOTER
     elements.append(Spacer(1, 10*mm))
-    fecha_emision = datetime.now().strftime('%d-%m-%Y, %H:%M:%S')
+    fecha_emision = timezone.now().strftime('%d-%m-%Y, %H:%M:%S')
     footer_style = ParagraphStyle('footer', parent=styles['Normal'], fontSize=8, 
                                   textColor=colors.HexColor('#6b7280'), alignment=TA_CENTER)
     elements.append(Paragraph(f'Fecha de emisión: {fecha_emision}', footer_style))

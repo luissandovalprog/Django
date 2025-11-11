@@ -9,6 +9,7 @@ from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, In
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
 from datetime import datetime
+from django.utils import timezone
 
 class MadreForm(forms.ModelForm):
     """
@@ -493,5 +494,5 @@ class PartogramaForm(forms.Form):
             'contracciones': self.cleaned_data.get('contracciones', ''),
             'presion_arterial': self.cleaned_data.get('presion_arterial', ''),
             'observaciones_clinicas': self.cleaned_data.get('observaciones_clinicas', ''),
-            'fecha_registro': datetime.now().isoformat()
+            'fecha_registro': timezone.now().isoformat()
         }

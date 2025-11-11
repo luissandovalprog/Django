@@ -62,7 +62,7 @@ def dashboard(request):
     total_madres = madres_qs.count()
     total_partos = partos_qs.count()
 
-    mes_actual = datetime.now().replace(day=1)
+    mes_actual = timezone.now().replace(day=1)
     partos_mes = partos_qs.filter(fecha_parto__gte=mes_actual).count()
 
     # Partos hoy

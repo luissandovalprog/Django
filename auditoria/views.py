@@ -220,7 +220,7 @@ def exportar_auditoria_json(request):
         content_type='application/json; charset=utf-8'
     )
     
-    fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
+    fecha_actual = timezone.now().strftime('%Y%m%d_%H%M%S')
     response['Content-Disposition'] = f'attachment; filename="auditoria_{fecha_actual}.json"'
     
     return response
