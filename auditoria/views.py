@@ -32,8 +32,11 @@ def es_admin_sistema(user):
 
 
 @login_required
-@user_passes_test(es_admin_sistema, login_url='core:dashboard')
 def historial_auditoria(request):
+    """Vista de auditoría - SOLO Admin Sistema y Supervisor"""
+    if not request.user.puede_ver_auditoria:
+        messages.error(request, 'No tiene permisos para acceder a la auditoría.')
+        return redirect('core:dashboard')
     """
     Vista principal de auditoría con filtros avanzados
     """

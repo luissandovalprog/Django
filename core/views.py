@@ -28,98 +28,100 @@ def get_client_ip(request):
 @login_required
 def dashboard(request):
     """
-    Dashboard principal con estadísticas y filtrado
+    Dashboard condicional según permisos del usuario
     """
     from datetime import date
     
     busqueda_query = request.GET.get('busqueda', '')
-
-    # Lógica de filtrado base
-    madres_qs = Madre.objects.all()
-    partos_qs = Parto.objects.select_related('madre', 'usuario_registro').prefetch_related('recien_nacidos')
-
-    # Lógica de permisos
-    if not request.user.puede_ver_todos_partos:
-        partos_qs = partos_qs.filter(usuario_registro=request.user)
-        madres_qs = madres_qs.filter(partos__usuario_registro=request.user).distinct()
-
-    # Lógica de búsqueda
-    if busqueda_query:
-        partos_qs = partos_qs.filter(
-            Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(madre__ficha_clinica_numero__icontains=busqueda_query) |
-            Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
-        ).distinct()
-
-        madres_qs = madres_qs.filter(
-            Q(rut_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(nombre_hash=crypto_service.hash_data(busqueda_query)) |
-            Q(ficha_clinica_numero__icontains=busqueda_query)
-        ).distinct()
-
-    # Estadísticas
-    total_madres = madres_qs.count()
-    total_partos = partos_qs.count()
-
-    mes_actual = timezone.now().replace(day=1)
-    partos_mes = partos_qs.filter(fecha_parto__gte=mes_actual).count()
-
-    # Partos hoy
-    hoy_inicio = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    hoy_fin = hoy_inicio + timedelta(days=1)
-    partos_hoy = partos_qs.filter(fecha_parto__gte=hoy_inicio, fecha_parto__lt=hoy_fin).count()
-
-    # Recién nacidos
-    total_recien_nacidos = RecienNacido.objects.filter(parto__in=partos_qs).count()
-
-    # Últimos partos con cálculo de días
-    ultimos_partos = partos_qs.order_by('-fecha_parto')[:10]
-    now = timezone.now()
+    context = {}
     
-    for p in ultimos_partos:
-        p.madre.nombre_descifrado = p.madre.get_nombre()
-        p.madre.rut_descifrado = p.madre.get_rut()
-        
-        # Calcular días de hospitalización
-        diferencia = now - p.fecha_parto
-        p.dias_hospitalizacion = diferencia.days
-        
-        # Determinar color del badge
-        if p.dias_hospitalizacion <= 3:
-            p.badge_color = 'badge-green'
-        elif p.dias_hospitalizacion <= 7:
-            p.badge_color = 'badge-yellow'
-        else:
-            p.badge_color = 'badge-red'
-
-    # Madres sin parto - CORREGIDO: Calcular edad aquí
-    madres_sin_parto = madres_qs.filter(partos__isnull=True)
-    hoy = date.today()
+    # ===== ADMIN SISTEMA: NO CARGA NADA CLÍNICO =====
+    if request.user.rol and request.user.rol.nombre == 'Admin Sistema':
+        # Admin Sistema NO ve dashboard clínico
+        return render(request, 'core/dashboard.html', context)
     
-    for m in madres_sin_parto:
-        m.nombre_descifrado = m.get_nombre()
-        # CALCULAR EDAD
-        if m.fecha_nacimiento:
-            edad = hoy.year - m.fecha_nacimiento.year
-            # Ajustar si aún no ha cumplido años este año
-            if (hoy.month, hoy.day) < (m.fecha_nacimiento.month, m.fecha_nacimiento.day):
-                edad -= 1
-            m.edad_calculada = edad
-        else:
-            m.edad_calculada = None
+    # ===== DASHBOARD CLÍNICO (Matrona, Médico, Enfermera, Supervisor) =====
+    if request.user.puede_ver_dashboard_clinico:
+        madres_qs = Madre.objects.all()
+        partos_qs = Parto.objects.select_related('madre', 'usuario_registro').prefetch_related('recien_nacidos')
 
-    context = {
-        'total_madres': total_madres,
-        'total_partos': total_partos,
-        'total_recien_nacidos': total_recien_nacidos,
-        'partos_mes': partos_mes,
-        'partos_hoy': partos_hoy,
-        'ultimos_partos': ultimos_partos,
-        'madres_sin_parto': madres_sin_parto,
-        'busqueda_query': busqueda_query,
-    }
+        # Filtro por turno si no ve todos
+        if not request.user.puede_ver_todos_partos:
+            partos_qs = partos_qs.filter(usuario_registro=request.user)
+            madres_qs = madres_qs.filter(partos__usuario_registro=request.user).distinct()
 
+        # Búsqueda
+        if busqueda_query:
+            partos_qs = partos_qs.filter(
+                Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) |
+                Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) |
+                Q(madre__ficha_clinica_numero__icontains=busqueda_query) |
+                Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
+            ).distinct()
+
+        # Estadísticas clínicas
+        total_madres = madres_qs.count()
+        total_partos = partos_qs.count()
+        mes_actual = datetime.now().replace(day=1)
+        partos_mes = partos_qs.filter(fecha_parto__gte=mes_actual).count()
+        hoy_inicio = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        hoy_fin = hoy_inicio + timedelta(days=1)
+        partos_hoy = partos_qs.filter(fecha_parto__gte=hoy_inicio, fecha_parto__lt=hoy_fin).count()
+        total_recien_nacidos = RecienNacido.objects.filter(parto__in=partos_qs).count()
+
+        # Últimos partos
+        ultimos_partos = partos_qs.order_by('-fecha_parto')[:10]
+        now = timezone.now()
+        for p in ultimos_partos:
+            p.madre.nombre_descifrado = p.madre.get_nombre()
+            p.madre.rut_descifrado = p.madre.get_rut()
+            diferencia = now - p.fecha_parto
+            p.dias_hospitalizacion = diferencia.days
+            if p.dias_hospitalizacion <= 3:
+                p.badge_color = 'badge-green'
+            elif p.dias_hospitalizacion <= 7:
+                p.badge_color = 'badge-yellow'
+            else:
+                p.badge_color = 'badge-red'
+
+        # Madres sin parto
+        madres_sin_parto = madres_qs.filter(partos__isnull=True)
+        hoy = date.today()
+        for m in madres_sin_parto:
+            m.nombre_descifrado = m.get_nombre()
+            if m.fecha_nacimiento:
+                edad = hoy.year - m.fecha_nacimiento.year
+                if (hoy.month, hoy.day) < (m.fecha_nacimiento.month, m.fecha_nacimiento.day):
+                    edad -= 1
+                m.edad_calculada = edad
+            else:
+                m.edad_calculada = None
+
+        context.update({
+            'total_madres': total_madres,
+            'total_partos': total_partos,
+            'total_recien_nacidos': total_recien_nacidos,
+            'partos_mes': partos_mes,
+            'partos_hoy': partos_hoy,
+            'ultimos_partos': ultimos_partos,
+            'madres_sin_parto': madres_sin_parto,
+            'busqueda_query': busqueda_query,
+        })
+    
+    # ===== DASHBOARD ADMINISTRATIVO (Solo Administrativo) =====
+    if request.user.puede_ver_lista_administrativa_madres:
+        # Obtener TODAS las madres
+        lista_madres_administrativa = Madre.objects.all().order_by('-fecha_registro')
+        
+        # Descifrar datos
+        for madre in lista_madres_administrativa:
+            madre.rut_descifrado = madre.get_rut()
+            madre.nombre_descifrado = madre.get_nombre()
+        
+        context.update({
+            'lista_madres_administrativa': lista_madres_administrativa,
+        })
+    
     return render(request, 'core/dashboard.html', context)
 
 
@@ -141,66 +143,62 @@ def madre_list(request):
 
 @login_required
 def madre_create(request):
-    """Crear nueva madre"""
+    """Crear nueva madre - SOLO roles con permiso"""
+    if not request.user.puede_crear_admision_madre:
+        messages.error(request, 'No tiene permisos para crear admisiones de madres.')
+        return redirect('core:dashboard')
+    
     if request.method == 'POST':
         form = MadreForm(request.POST)
         if form.is_valid():
             madre = form.save()
             
-            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='CREATE_MADRE',
                 tabla_afectada='Madre',
                 registro_id=madre.id,
-                detalles=f'Madre registrada - Ficha: {madre.ficha_clinica_id}, Nombre: {madre.get_nombre()}',
+                detalles=f'Madre registrada - Ficha: {madre.ficha_clinica_numero}, Nombre: {madre.get_nombre()}',
                 ip=get_client_ip(request)
             )
             
             messages.success(request, 'Madre registrada exitosamente')
             return redirect('core:dashboard')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
     else:
         form = MadreForm()
     
-    context = {'form': form, 'title': 'Admisión de Madre'}
-    return render(request, 'core/madre_form.html', context)
+    return render(request, 'core/madre_form.html', {'form': form, 'title': 'Admisión de Madre'})
 
 
 @login_required
 def madre_update(request, pk):
-    """Actualizar madre existente"""
+    """Actualizar madre - SOLO roles con permiso"""
     madre = get_object_or_404(Madre, pk=pk)
+    
+    if not request.user.puede_editar_admision_madre:
+        messages.error(request, 'No tiene permisos para editar admisiones de madres.')
+        return redirect('core:dashboard')
     
     if request.method == 'POST':
         form = MadreForm(request.POST, instance=madre)
         if form.is_valid():
             madre = form.save()
             
-            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='UPDATE_MADRE',
                 tabla_afectada='Madre',
                 registro_id=madre.id,
-                detalles=f'Madre actualizada - Ficha: {madre.ficha_clinica_id}',
+                detalles=f'Madre actualizada - Ficha: {madre.ficha_clinica_numero}',
                 ip=get_client_ip(request)
             )
             
             messages.success(request, 'Madre actualizada exitosamente')
             return redirect('core:madre_list')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
     else:
         form = MadreForm(instance=madre)
     
-    context = {'form': form, 'title': 'Editar Madre', 'madre': madre}
-    return render(request, 'core/madre_form.html', context)
+    return render(request, 'core/madre_form.html', {'form': form, 'title': 'Editar Madre', 'madre': madre})
 
 
 @login_required
@@ -453,12 +451,11 @@ def anexar_correccion(request, pk):
 
 @login_required
 def crear_epicrisis(request, pk):
-    """Crear epicrisis e indicaciones (solo médicos)"""
+    """Crear epicrisis - SOLO Médicos"""
     parto = get_object_or_404(Parto, pk=pk)
 
-    # Verificar permisos (solo médicos pueden crear epicrisis)
-    if not request.user.puede_anexar_correccion:  # Usamos el mismo permiso de médico
-        messages.error(request, 'Solo los médicos pueden crear epicrisis.')
+    if not request.user.puede_crear_editar_epicrisis:
+        messages.error(request, 'No tiene permisos para crear epicrisis.')
         return redirect('core:parto_detail', pk=parto.pk)
 
     if request.method == 'POST':
@@ -466,7 +463,6 @@ def crear_epicrisis(request, pk):
         formset = IndicacionFormSet(request.POST, instance=parto, prefix='indicaciones')
 
         if form.is_valid() and formset.is_valid():
-            # Guardar datos de epicrisis en el JSONField
             parto.epicrisis_data = {
                 'motivo_ingreso': form.cleaned_data.get('motivo_ingreso', ''),
                 'resumen_evolucion': form.cleaned_data.get('resumen_evolucion', ''),
@@ -480,11 +476,8 @@ def crear_epicrisis(request, pk):
                 'fecha_creacion': timezone.now().isoformat()
             }
             parto.save()
-
-            # Guardar el formset de indicaciones
             formset.save()
 
-            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='CREAR_EPICRISIS',
@@ -495,28 +488,24 @@ def crear_epicrisis(request, pk):
             )
             
             messages.success(request, 'Epicrisis e indicaciones guardadas exitosamente.')
-            return redirect('core:parto_detail', pk=parto.pk)
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
-            for form_errors in formset.errors:
-                for field, errors in form_errors.items():
-                    for error in errors:
-                        messages.error(request, f'Indicación - {field}: {error}')
+            return redirect('core:epicrisis_list')
     else:
-        # Cargar datos existentes si ya hay epicrisis
-        initial_data = parto.epicrisis_data if parto.epicrisis_data else {}
+        initial_data = {}
+        if parto.epicrisis_data:
+            initial_data = parto.epicrisis_data
         form = EpicrisisForm(initial=initial_data)
         formset = IndicacionFormSet(instance=parto, prefix='indicaciones')
 
-    context = {
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+
+    return render(request, 'core/epicrisis_form.html', {
         'form': form,
         'formset': formset,
         'parto': parto,
         'madre': parto.madre,
-        'title': 'Epicrisis e Indicaciones Médicas'
-    }
+        'title': 'Editar Epicrisis' if parto.epicrisis_data else 'Crear Epicrisis'
+    })
 
 @login_required
 def registrar_parto_para_madre(request, madre_pk):
@@ -719,22 +708,17 @@ def partograma_list(request):
 
 @login_required
 def partograma_create(request, parto_pk):
-    """
-    Vista para crear un nuevo partograma
-    """
+    """Crear partograma - SOLO Matrona/Enfermera"""
     parto = get_object_or_404(Parto, pk=parto_pk)
     
-    # Verificar permisos
-    if not request.user.puede_crear_partos:
-        messages.error(request, 'No tiene permisos para crear partogramas')
+    if not request.user.puede_crear_editar_partograma:
+        messages.error(request, 'No tiene permisos para crear partogramas.')
         return redirect('core:parto_detail', pk=parto_pk)
     
-    # Verificar acceso al parto
     if not request.user.puede_ver_todos_partos and parto.usuario_registro != request.user:
-        messages.error(request, 'No tiene permiso para acceder a este parto')
+        messages.error(request, 'No tiene permiso para acceder a este parto.')
         return redirect('core:dashboard')
     
-    # Verificar si ya existe un partograma
     if parto.partograma_data:
         messages.warning(request, 'Este parto ya tiene un partograma. Use la opción de editar.')
         return redirect('core:partograma_update', parto_pk=parto_pk)
@@ -742,11 +726,9 @@ def partograma_create(request, parto_pk):
     if request.method == 'POST':
         form = PartogramaForm(request.POST)
         if form.is_valid():
-            # Guardar datos en formato JSON
             parto.partograma_data = form.to_json()
             parto.save()
             
-            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
                 accion='CREATE_PARTOGRAMA',
@@ -758,24 +740,17 @@ def partograma_create(request, parto_pk):
             
             messages.success(request, 'Partograma registrado exitosamente')
             return redirect('core:parto_detail', pk=parto_pk)
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
     else:
         form = PartogramaForm()
     
-    # Descifrar datos de la madre
     parto.madre.nombre_descifrado = parto.madre.get_nombre()
     parto.madre.rut_descifrado = parto.madre.get_rut()
     
-    context = {
+    return render(request, 'core/partograma_form.html', {
         'form': form,
         'parto': parto,
         'title': 'Crear Partograma'
-    }
-    
-    return render(request, 'core/partograma_form.html', context)
+    })
 
 
 @login_required
@@ -865,7 +840,7 @@ def epicrisis_list(request):
     Vista de listado de epicrisis (pantalla principal)
     Muestra todas las madres que tienen partos
     """
-    if not request.user.puede_crear_partos:
+    if not request.user.puede_crear_editar_epicrisis:
         messages.error(request, 'No tiene permisos para acceder a epicrisis')
         return redirect('core:dashboard')
     
@@ -921,7 +896,7 @@ def crear_epicrisis(request, pk):
     parto = get_object_or_404(Parto, pk=pk)
 
     # Verificar permisos (solo médicos pueden crear epicrisis)
-    if not request.user.puede_anexar_correccion:
+    if not request.user.puede_crear_editar_epicrisis:
         messages.error(request, 'Solo los médicos pueden crear epicrisis.')
         return redirect('core:parto_detail', pk=parto.pk)
 

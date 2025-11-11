@@ -35,7 +35,7 @@
         </form>
     </div>
 
-    {% if user.rol.nombre != 'Admin Sistema' %}
+    {% if user.puede_ver_dashboard_clinico %}
     <!-- Stats Cards -->
     <div class="stats-grid">
         <div class="stat-card">
@@ -103,85 +103,85 @@
     {% endif %}
 
     <!-- Recent Births Table -->
-    {% if user.puede_ver_todos_partos or user.rol.nombre == 'Matrona Clínica' %}
-<div class="card">
-    <h2 class="card-header">Recién Nacidos Hospitalizados</h2>
-    
-    {% if not ultimos_partos %}
-        <p style="text-align: center; color: var(--gray-500); padding: 40px 0;">
-            No hay partos registrados que coincidan con su búsqueda.
-        </p>
-    {% else %}
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID Recién Nacido</th>
-                    <th>Madre</th>
-                    <th>RUT Madre</th>
-                    <th>Fecha Ingreso</th>
-                    <th>Días</th>
-                    <th>Tipo</th>
-                    <th>Peso</th>
-                    <th>APGAR</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for parto in ultimos_partos %}
-                {% with parto.recien_nacidos.first as rn %}
-                <tr>
-                    <td style="font-weight: 600;">{{ rn.rut_provisorio|default_if_none:parto.id|truncatechars:15 }}</td>
-                    <td>{{ parto.madre.nombre_descifrado|default:"N/A" }}</td>
-                    <td>{{ parto.madre.get_rut|default:"N/A" }}</td>
-                    <td>{{ parto.fecha_parto|date:"d-m-Y H:i" }}</td>
-                    <td>
-                        {% now "U" as current_timestamp %}
-                        {% with parto.fecha_parto|date:"U" as parto_timestamp %}
-                            {% with dias_hospitalizacion=current_timestamp|add:"-"|add:parto_timestamp %}
-                                {% widthratio dias_hospitalizacion 86400 1 as dias %}
-                                <span class="badge {% if dias <= 3 %}badge-green{% elif dias <= 7 %}badge-yellow{% else %}badge-red{% endif %}">
-                                    {{ dias }} día{{ dias|pluralize }}
+    {% if user.puede_ver_dashboard_clinico %}
+        <div class="card">
+            <h2 class="card-header">Recién Nacidos Hospitalizados</h2>
+
+            {% if not ultimos_partos %}
+                <p style="text-align: center; color: var(--gray-500); padding: 40px 0;">
+                    No hay partos registrados que coincidan con su búsqueda.
+                </p>
+            {% else %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID Recién Nacido</th>
+                            <th>Madre</th>
+                            <th>RUT Madre</th>
+                            <th>Fecha Ingreso</th>
+                            <th>Días</th>
+                            <th>Tipo</th>
+                            <th>Peso</th>
+                            <th>APGAR</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for parto in ultimos_partos %}
+                        {% with parto.recien_nacidos.first as rn %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ rn.rut_provisorio|default_if_none:parto.id|truncatechars:15 }}</td>
+                            <td>{{ parto.madre.nombre_descifrado|default:"N/A" }}</td>
+                            <td>{{ parto.madre.get_rut|default:"N/A" }}</td>
+                            <td>{{ parto.fecha_parto|date:"d-m-Y H:i" }}</td>
+                            <td>
+                                {% now "U" as current_timestamp %}
+                                {% with parto.fecha_parto|date:"U" as parto_timestamp %}
+                                    {% with dias_hospitalizacion=current_timestamp|add:"-"|add:parto_timestamp %}
+                                        {% widthratio dias_hospitalizacion 86400 1 as dias %}
+                                        <span class="badge {% if dias <= 3 %}badge-green{% elif dias <= 7 %}badge-yellow{% else %}badge-red{% endif %}">
+                                            {{ dias }} día{{ dias|pluralize }}
+                                        </span>
+                                    {% endwith %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <span class="badge {% if 'Cesárea' in parto.tipo_parto %}badge-yellow{% else %}badge-green{% endif %}">
+                                    {{ parto.tipo_parto }}
                                 </span>
-                            {% endwith %}
+                            </td>
+                            <td>{{ rn.peso_gramos|default_if_none:"N/A" }}g</td>
+                            <td>{{ rn.apgar_1_min|default_if_none:"-" }}/{{ rn.apgar_5_min|default_if_none:"-" }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'core:parto_detail' parto.pk %}" class="btn-icon blue" title="Ver detalle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </a>
+                                    <a href="{% url 'reportes:generar_brazalete_pdf' parto.pk %}" class="btn-icon green" title="Imprimir brazalete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 6 2 18 2 18 9"/>
+                                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                            <rect x="6" y="14" width="12" height="8"/>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                         {% endwith %}
-                    </td>
-                    <td>
-                        <span class="badge {% if 'Cesárea' in parto.tipo_parto %}badge-yellow{% else %}badge-green{% endif %}">
-                            {{ parto.tipo_parto }}
-                        </span>
-                    </td>
-                    <td>{{ rn.peso_gramos|default_if_none:"N/A" }}g</td>
-                    <td>{{ rn.apgar_1_min|default_if_none:"-" }}/{{ rn.apgar_5_min|default_if_none:"-" }}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <a href="{% url 'core:parto_detail' parto.pk %}" class="btn-icon blue" title="Ver detalle">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </a>
-                            <a href="{% url 'reportes:generar_brazalete_pdf' parto.pk %}" class="btn-icon green" title="Imprimir brazalete">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="6 9 6 2 18 2 18 9"/>
-                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                                    <rect x="6" y="14" width="12" height="8"/>
-                                </svg>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% endwith %}
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
     {% endif %}
-</div>
-{% endif %}
 
     <!-- Mothers without Birth Record -->
-    {% if user.puede_crear_partos %}
+    {% if user.puede_ver_dashboard_clinico %}
 <div class="card">
     <h3 class="card-header">Madres sin Parto Registrado (Mi Turno)</h3>
     {% if not madres_sin_parto %}
@@ -248,6 +248,49 @@
         </table>
     </div>
     {% endif %}
+</div>
+{% endif %}
+
+{% if user.puede_ver_lista_administrativa_madres %}
+<!-- NUEVA CARD PARA ADMINISTRATIVO -->
+<div class="card">
+    <h3 class="card-header">Listado de Madres (Administrativo)</h3>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>RUT</th>
+                    <th>Nombre Completo</th>
+                    <th>Ficha Clínica</th>
+                    <th>Fecha Nacimiento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for madre in lista_madres_administrativa %}
+                <tr>
+                    <td>{{ madre.rut_descifrado }}</td>
+                    <td style="font-weight: 600;">{{ madre.nombre_descifrado }}</td>
+                    <td>{{ madre.ficha_clinica_numero|default:"Sin ficha" }}</td>
+                    <td>{{ madre.fecha_nacimiento|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if user.puede_editar_admision_madre %}
+                        <a href="{% url 'core:madre_update' madre.pk %}" class="btn-icon" style="background: #f59e0b; color: white;" title="Editar">
+                            <svg>...</svg>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">
+                        No hay madres registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 

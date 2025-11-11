@@ -24,7 +24,7 @@ def get_client_ip(request):
 
 
 def login_view(request):
-    """Vista de login"""
+    """Vista de login con redirección por rol"""
     if request.user.is_authenticated:
         return redirect('core:dashboard')
     
@@ -39,7 +39,7 @@ def login_view(request):
                 if user.activo:
                     login(request, user)
                     
-                    # Registrar login en auditoría
+                    # Registrar login
                     LogAuditoria.registrar(
                         usuario=user,
                         accion='LOGIN',
@@ -49,11 +49,16 @@ def login_view(request):
                     
                     messages.success(request, f'Bienvenido, {user.nombre_completo}')
                     
-                    # Redirigir según el parámetro 'next' o al dashboard
-                    next_url = request.GET.get('next', 'core:dashboard')
-                    return redirect(next_url)
+                    # ===== REDIRECCIÓN POR ROL =====
+                    if user.rol and user.rol.nombre == 'Admin Sistema':
+                        return redirect('auditoria:historial_auditoria')
+                    elif user.rol and user.rol.nombre == 'Administrativo':
+                        return redirect('core:dashboard')  # Dashboard con tabla administrativa
+                    else:
+                        # Matrona, Médico, Enfermera, Supervisor
+                        return redirect('core:dashboard')
                 else:
-                    messages.error(request, 'Su cuenta está desactivada. Contacte al administrador.')
+                    messages.error(request, 'Su cuenta está desactivada.')
             else:
                 messages.error(request, 'Usuario o contraseña incorrectos')
     else:
@@ -85,8 +90,12 @@ def es_admin_sistema(user):
     return user.is_authenticated and (user.is_superuser or user.puede_gestionar_usuarios)
 
 
-@user_passes_test(es_admin_sistema, login_url='core:dashboard')
+@login_required
 def gestion_usuarios(request):
+    """Gestión de usuarios - SOLO Admin Sistema y Supervisor"""
+    if not request.user.puede_gestionar_usuarios:
+        messages.error(request, 'No tiene permisos para gestionar usuarios.')
+        return redirect('core:dashboard')
     """
     Vista de gestión de usuarios (solo para administradores)
     Versión mejorada con estadísticas

@@ -9,9 +9,11 @@ from .models import Rol, Usuario
 
 @admin.register(Rol)
 class RolAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'descripcion', 'puede_crear_partos', 'puede_generar_reportes')
+    list_display = ('nombre', 'descripcion')
     search_fields = ('nombre',)
-    list_filter = ('puede_crear_partos', 'puede_generar_reportes')
+    list_filter = ('puede_crear_admision_madre','puede_editar_admision_madre', 'puede_ver_lista_administrativa_madres',
+                   'puede_ver_dashboard_clinico', 'puede_crear_parto', 'puede_editar_parto', 'puede_ver_todos_partos',
+                   'puede_crear_editar_partograma', 'puede_crear_editar_epicrisis', 'puede_generar_reportes_rem')
 
 
 @admin.register(Usuario)

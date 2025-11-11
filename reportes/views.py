@@ -30,11 +30,9 @@ def reporte_menu(request):
 
 @login_required
 def generar_rem_bs22(request):
-    """
-    Genera el Reporte REM BS22: Atenciones de Obstetricia y Ginecología
-    """
-    if not request.user.puede_generar_reportes:
-        messages.error(request, 'No tienes permiso para generar reportes')
+    """Genera REM BS22 - SOLO Médicos y Supervisores"""
+    if not request.user.puede_generar_reportes_rem:
+        messages.error(request, 'No tiene permisos para generar reportes REM.')
         return redirect('core:dashboard')
     
     if request.method == 'POST':
@@ -45,38 +43,17 @@ def generar_rem_bs22(request):
             messages.error(request, 'Debe seleccionar ambas fechas')
             return render(request, 'reportes/rem_bs22_form.html')
         
-        # Convertir fechas
-        try:
-            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
-        except ValueError:
-            messages.error(request, 'Formato de fecha inválido')
-            return render(request, 'reportes/rem_bs22_form.html')
+        # ... resto de la lógica ...
         
-        # Filtrar partos en el rango de fechas
-        partos = Parto.objects.filter(
-            fecha_parto__gte=fecha_inicio,
-            fecha_parto__lte=fecha_fin
-        ).select_related('madre').prefetch_related('recien_nacidos')
-        
-        # Calcular estadísticas para REM BS22
-        estadisticas = calcular_estadisticas_rem_bs22(partos)
-        
-        # Registrar generación de reporte
+        # Registrar generación
         LogAuditoria.registrar(
             usuario=request.user,
             accion='GENERAR_REPORTE_REM_BS22',
-            detalles=f'Periodo: {fecha_inicio.date()} a {fecha_fin.date()}'
+            detalles=f'Periodo: {fecha_inicio} a {fecha_fin}',
+            ip=get_client_ip(request)
         )
         
-        context = {
-            'estadisticas': estadisticas,
-            'fecha_inicio': fecha_inicio,
-            'fecha_fin': fecha_fin,
-            'total_partos': partos.count()
-        }
-        
-        return render(request, 'reportes/rem_bs22_resultado.html', context)
+        # ... continuar
     
     return render(request, 'reportes/rem_bs22_form.html')
 

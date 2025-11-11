@@ -1,29 +1,60 @@
 """
 Modelos de la aplicación Accounts
-Sistema de autenticación con RBAC
+Sistema de autenticación con RBAC GRANULAR
 """
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 import uuid
 from django.utils.translation import gettext_lazy as _
 
 class Rol(models.Model):
     """
-    Modelo de Roles para sistema RBAC
+    Modelo de Roles para sistema RBAC GRANULAR
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre = models.CharField(max_length=50, unique=True)
     descripcion = models.TextField(blank=True, null=True)
     
-    # Permisos específicos por rol
-    puede_crear_partos = models.BooleanField(default=False)
-    puede_editar_partos = models.BooleanField(default=False)
-    puede_eliminar_partos = models.BooleanField(default=False)
-    puede_ver_todos_partos = models.BooleanField(default=False, help_text="Si no está marcado, solo ve sus propios registros (ej. Matrona)")
-    puede_generar_reportes = models.BooleanField(default=False)
+    # ===== PERMISOS GRANULARES =====
+    
+    # Admisiones de Madres
+    puede_crear_admision_madre = models.BooleanField(default=False)
+    puede_editar_admision_madre = models.BooleanField(default=False)
+    
+    # Dashboard y Visualización
+    puede_ver_lista_administrativa_madres = models.BooleanField(default=False)
+    puede_ver_dashboard_clinico = models.BooleanField(default=False)
+    
+    # Partos
+    puede_crear_parto = models.BooleanField(default=False)
+    puede_editar_parto = models.BooleanField(default=False)
+    puede_ver_todos_partos = models.BooleanField(
+        default=False, 
+        help_text="Si no está marcado, solo ve sus propios registros"
+    )
+    
+    # Partogramas
+    puede_crear_editar_partograma = models.BooleanField(default=False)
+    
+    # Epicrisis
+    puede_crear_editar_epicrisis = models.BooleanField(default=False)
+    
+    # Reportes REM
+    puede_generar_reportes_rem = models.BooleanField(default=False)
+    
+    # Auditoría y Gestión
+    puede_ver_auditoria = models.BooleanField(default=False)
     puede_gestionar_usuarios = models.BooleanField(default=False)
-    puede_anexar_correccion = models.BooleanField(default=False, help_text="Permiso para anexar correcciones (ej. Médico)")
+    
+    # Eliminación (Solo Supervisor)
+    puede_eliminar_registros = models.BooleanField(default=False)
+    
+    # Anexar correcciones (Solo Médicos)
+    puede_anexar_correccion = models.BooleanField(
+        default=False, 
+        help_text="Permiso para anexar correcciones (ej. Médico)"
+    )
     
     class Meta:
         db_table = 'Rol'
@@ -60,7 +91,7 @@ class UsuarioManager(BaseUserManager):
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
     """
-    Modelo de Usuario personalizado con RBAC
+    Modelo de Usuario personalizado con RBAC GRANULAR
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     rut = models.CharField(max_length=255, unique=True, verbose_name='RUT')
@@ -95,53 +126,116 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return f"{self.nombre_completo} ({self.username})"
     
     def has_perm(self, perm, obj=None):
-        """
-        Verifica permisos personalizados basados en rol
-        """
+        """Verifica permisos personalizados basados en rol"""
         if self.is_superuser:
             return True
         return super().has_perm(perm, obj)
     
     def has_module_perms(self, app_label):
-        """
-        Permisos de módulo
-        """
+        """Permisos de módulo"""
         if self.is_superuser:
             return True
         return super().has_module_perms(app_label)
     
-    @property
-    def puede_crear_partos(self):
-        return self.rol.puede_crear_partos if self.rol else False
+    # ===== PROPIEDADES DE PERMISOS GRANULARES =====
     
     @property
-    def puede_editar_partos(self):
-        return self.rol.puede_editar_partos if self.rol else False
+    def puede_crear_admision_madre(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_crear_admision_madre if self.rol else False
     
     @property
-    def puede_eliminar_partos(self):
-        return self.rol.puede_eliminar_partos if self.rol else False
+    def puede_editar_admision_madre(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_editar_admision_madre if self.rol else False
+    
+    @property
+    def puede_ver_lista_administrativa_madres(self):
+        if self.is_superuser:
+            return False  # Admin Sistema NO ve datos clínicos
+        return self.rol.puede_ver_lista_administrativa_madres if self.rol else False
+    
+    @property
+    def puede_ver_dashboard_clinico(self):
+        if self.is_superuser:
+            return False  # Admin Sistema NO ve datos clínicos
+        return self.rol.puede_ver_dashboard_clinico if self.rol else False
+    
+    @property
+    def puede_crear_parto(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_crear_parto if self.rol else False
+    
+    @property
+    def puede_editar_parto(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_editar_parto if self.rol else False
     
     @property
     def puede_ver_todos_partos(self):
         if self.is_superuser:
             return True
-        return self.rol and self.rol.puede_ver_todos_partos
+        return self.rol.puede_ver_todos_partos if self.rol else False
+    
+    @property
+    def puede_crear_editar_partograma(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_crear_editar_partograma if self.rol else False
+    
+    @property
+    def puede_crear_editar_epicrisis(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_crear_editar_epicrisis if self.rol else False
+    
+    @property
+    def puede_generar_reportes_rem(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_generar_reportes_rem if self.rol else False
+    
+    @property
+    def puede_ver_auditoria(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_ver_auditoria if self.rol else False
+    
+    @property
+    def puede_gestionar_usuarios(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_gestionar_usuarios if self.rol else False
+    
+    @property
+    def puede_eliminar_registros(self):
+        if self.is_superuser:
+            return True
+        return self.rol.puede_eliminar_registros if self.rol else False
     
     @property
     def puede_anexar_correccion(self):
         if self.is_superuser:
             return True
-        return self.rol and self.rol.puede_anexar_correccion
-
+        return self.rol.puede_anexar_correccion if self.rol else False
+    
+    # ===== PROPIEDADES LEGACY (mantener compatibilidad) =====
+    
     @property
-    def puede_ver_todos_partos(self):
-        return self.rol.puede_ver_todos_partos if self.rol else False
+    def puede_crear_partos(self):
+        """Alias para compatibilidad"""
+        return self.puede_crear_parto
+    
+    @property
+    def puede_editar_partos(self):
+        """Alias para compatibilidad"""
+        return self.puede_editar_parto
     
     @property
     def puede_generar_reportes(self):
-        return self.rol.puede_generar_reportes if self.rol else False
-    
-    @property
-    def puede_gestionar_usuarios(self):
-        return self.rol.puede_gestionar_usuarios if self.rol else False
+        """Alias para compatibilidad"""
+        return self.puede_generar_reportes_rem
