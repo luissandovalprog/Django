@@ -13,7 +13,7 @@ from .models import Madre, Parto, RecienNacido, Correccion, Indicacion
 from .forms import MadreForm, PartoForm, RecienNacidoForm, CorreccionForm, EpicrisisForm, IndicacionFormSet, PartogramaForm
 from auditoria.models import LogAuditoria
 from utils.crypto import crypto_service
-
+from django.http import HttpResponse
 
 def get_client_ip(request):
     """Obtiene la IP del cliente"""

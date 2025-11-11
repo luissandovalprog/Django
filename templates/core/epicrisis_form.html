@@ -33,7 +33,7 @@
         <form method="post">
             {% csrf_token %}
 
-            <!-- SECCIÓN 1: EPICRISIS -->
+            <!-- SECCIÓN 1: DATOS DE EPICRISIS -->
             <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--gray-200);">
                 <h3 style="font-size: 18px; font-weight: 600; color: var(--gray-900); margin-bottom: 16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-blue);">
@@ -47,7 +47,12 @@
                     <label for="{{ form.motivo_ingreso.id_for_label }}" class="form-label">
                         {{ form.motivo_ingreso.label }}
                     </label>
-                    {{ form.motivo_ingreso }}
+                    <input type="text" 
+                           id="{{ form.motivo_ingreso.id_for_label }}" 
+                           name="{{ form.motivo_ingreso.name }}"
+                           class="form-input" 
+                           placeholder="Ej: Trabajo de parto en fase activa"
+                           value="{{ form.motivo_ingreso.value|default:'' }}">
                     <p class="form-hint">Razón principal del ingreso hospitalario</p>
                     {% if form.motivo_ingreso.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -60,7 +65,11 @@
                     <label for="{{ form.resumen_evolucion.id_for_label }}" class="form-label required">
                         {{ form.resumen_evolucion.label }}
                     </label>
-                    {{ form.resumen_evolucion }}
+                    <textarea id="{{ form.resumen_evolucion.id_for_label }}" 
+                              name="{{ form.resumen_evolucion.name }}"
+                              class="form-textarea" 
+                              rows="4"
+                              placeholder="Describa la evolución del paciente durante la hospitalización">{{ form.resumen_evolucion.value|default:'' }}</textarea>
                     <p class="form-hint">Descripción de la evolución del paciente durante la hospitalización</p>
                     {% if form.resumen_evolucion.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -73,7 +82,11 @@
                     <label for="{{ form.diagnostico_egreso.id_for_label }}" class="form-label required">
                         {{ form.diagnostico_egreso.label }}
                     </label>
-                    {{ form.diagnostico_egreso }}
+                    <textarea id="{{ form.diagnostico_egreso.id_for_label }}" 
+                              name="{{ form.diagnostico_egreso.name }}"
+                              class="form-textarea" 
+                              rows="3"
+                              placeholder="Ej: Parto eutócico, puerperio fisiológico">{{ form.diagnostico_egreso.value|default:'' }}</textarea>
                     <p class="form-hint">Diagnóstico principal y secundarios al momento del egreso</p>
                     {% if form.diagnostico_egreso.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -87,7 +100,15 @@
                         <label for="{{ form.condicion_egreso.id_for_label }}" class="form-label required">
                             {{ form.condicion_egreso.label }}
                         </label>
-                        {{ form.condicion_egreso }}
+                        <select id="{{ form.condicion_egreso.id_for_label }}" 
+                                name="{{ form.condicion_egreso.name }}"
+                                class="form-select">
+                            <option value="">Seleccione...</option>
+                            <option value="buena" {% if form.condicion_egreso.value == "buena" %}selected{% endif %}>Buena</option>
+                            <option value="regular" {% if form.condicion_egreso.value == "regular" %}selected{% endif %}>Regular</option>
+                            <option value="grave" {% if form.condicion_egreso.value == "grave" %}selected{% endif %}>Grave</option>
+                            <option value="fallecido" {% if form.condicion_egreso.value == "fallecido" %}selected{% endif %}>Fallecido</option>
+                        </select>
                         {% if form.condicion_egreso.errors %}
                             <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
                                 {{ form.condicion_egreso.errors|join:", " }}
@@ -99,8 +120,13 @@
                         <label for="{{ form.control_posterior.id_for_label }}" class="form-label">
                             {{ form.control_posterior.label }}
                         </label>
-                        {{ form.control_posterior }}
-                        <p class="form-hint">Ejemplo: Control en 7 días en policlínico</p>
+                        <input type="text" 
+                               id="{{ form.control_posterior.id_for_label }}" 
+                               name="{{ form.control_posterior.name }}"
+                               class="form-input" 
+                               placeholder="Ej: Control en 7 días en policlínico"
+                               value="{{ form.control_posterior.value|default:'' }}">
+                        <p class="form-hint">Indicaciones para control posterior al alta</p>
                         {% if form.control_posterior.errors %}
                             <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
                                 {{ form.control_posterior.errors|join:", " }}
@@ -113,7 +139,11 @@
                     <label for="{{ form.indicaciones_alta.id_for_label }}" class="form-label">
                         {{ form.indicaciones_alta.label }}
                     </label>
-                    {{ form.indicaciones_alta }}
+                    <textarea id="{{ form.indicaciones_alta.id_for_label }}" 
+                              name="{{ form.indicaciones_alta.name }}"
+                              class="form-textarea" 
+                              rows="3"
+                              placeholder="Recomendaciones generales al alta">{{ form.indicaciones_alta.value|default:'' }}</textarea>
                     <p class="form-hint">Recomendaciones generales al alta</p>
                     {% if form.indicaciones_alta.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -126,7 +156,11 @@
                     <label for="{{ form.observaciones.id_for_label }}" class="form-label">
                         {{ form.observaciones.label }}
                     </label>
-                    {{ form.observaciones }}
+                    <textarea id="{{ form.observaciones.id_for_label }}" 
+                              name="{{ form.observaciones.name }}"
+                              class="form-textarea" 
+                              rows="2"
+                              placeholder="Observaciones adicionales">{{ form.observaciones.value|default:'' }}</textarea>
                     {% if form.observaciones.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
                             {{ form.observaciones.errors|join:", " }}
@@ -145,120 +179,78 @@
                     Indicaciones Médicas
                 </h3>
 
-                {{ formset.management_form }}
-                
-                <!-- Tabla de indicaciones existentes -->
-                <div id="indicaciones-table" style="background: white; border-radius: 8px; overflow: hidden; margin-bottom: 16px;">
-                    {% if formset.forms %}
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #10b981; color: white;">
-                            <tr>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Tipo</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Descripción</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Dosis</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Vía</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Frecuencia</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; text-transform: uppercase; width: 80px;">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody id="indicaciones-tbody">
-                            {% for form in formset %}
-                            <tr class="indicacion-row" style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 12px;">
-                                    {{ form.id }}
-                                    <select name="{{ form.tipo.html_name }}" id="{{ form.tipo.id_for_label }}" class="form-select" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                        {% for value, label in form.tipo.field.choices %}
-                                        <option value="{{ value }}" {% if form.tipo.value == value %}selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                                <td style="padding: 12px;">
-                                    <input type="text" name="{{ form.descripcion.html_name }}" id="{{ form.descripcion.id_for_label }}" class="form-input" placeholder="Ej: Paracetamol" value="{{ form.descripcion.value|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                </td>
-                                <td style="padding: 12px;">
-                                    <input type="text" name="{{ form.dosis.html_name }}" id="{{ form.dosis.id_for_label }}" class="form-input" placeholder="Ej: 500mg" value="{{ form.dosis.value|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                </td>
-                                <td style="padding: 12px;">
-                                    <input type="text" name="{{ form.via.html_name }}" id="{{ form.via.id_for_label }}" class="form-input" placeholder="Ej: Oral" value="{{ form.via.value|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                </td>
-                                <td style="padding: 12px;">
-                                    <input type="text" name="{{ form.frecuencia.html_name }}" id="{{ form.frecuencia.id_for_label }}" class="form-input" placeholder="Ej: Cada 8 horas" value="{{ form.frecuencia.value|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                </td>
-                                <td style="padding: 12px; text-align: center;">
-                                    {% if form.instance.pk %}
-                                    <label style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        {{ form.DELETE }}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;">
-                                            <polyline points="3 6 5 6 21 6"/>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                            <line x1="10" y1="11" x2="10" y2="17"/>
-                                            <line x1="14" y1="11" x2="14" y2="17"/>
-                                        </svg>
-                                    </label>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                    <div style="padding: 40px; text-align: center; color: #6b7280;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.3;">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        <p style="font-size: 14px;">No hay indicaciones médicas registradas</p>
-                        <p style="font-size: 12px; margin-top: 8px;">Presione el botón de abajo para agregar una</p>
+                <!-- Formulario de nueva indicación -->
+                <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #10b981;">
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Tipo</label>
+                            <select id="new-tipo" class="form-select">
+                                <option value="">Seleccione...</option>
+                                <option value="medicamento">Medicamento</option>
+                                <option value="procedimiento">Procedimiento</option>
+                                <option value="cuidado">Cuidado de Enfermería</option>
+                                <option value="dieta">Dieta</option>
+                                <option value="reposo">Reposo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Descripción *</label>
+                            <input type="text" id="new-descripcion" class="form-input" placeholder="Ej: Paracetamol">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Dosis</label>
+                            <input type="text" id="new-dosis" class="form-input" placeholder="Ej: 500mg">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Vía</label>
+                            <input type="text" id="new-via" class="form-input" placeholder="Ej: Oral">
+                        </div>
                     </div>
-                    {% endif %}
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Frecuencia</label>
+                        <input type="text" id="new-frecuencia" class="form-input" placeholder="Ej: Cada 8 horas">
+                    </div>
+
+                    <button type="button" id="btn-agregar-indicacion" class="btn btn-success" style="width: 100%; margin-top: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        Agregar Indicación
+                    </button>
                 </div>
 
-                <!-- Template para nuevas indicaciones (oculto) -->
-                <table style="display: none;">
-                    <tbody id="empty-form-template">
-                        <tr class="indicacion-row" style="border-bottom: 1px solid #e5e7eb;">
-                            <td style="padding: 12px;">
-                                {{ formset.empty_form.id }}
-                                <select name="{{ formset.empty_form.tipo.html_name }}" id="{{ formset.empty_form.tipo.id_for_label }}" class="form-select" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                                    {% for value, label in formset.empty_form.tipo.field.choices %}
-                                    <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td style="padding: 12px;">
-                                <input type="text" name="{{ formset.empty_form.descripcion.html_name }}" id="{{ formset.empty_form.descripcion.id_for_label }}" class="form-input" placeholder="Ej: Paracetamol" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                            </td>
-                            <td style="padding: 12px;">
-                                <input type="text" name="{{ formset.empty_form.dosis.html_name }}" id="{{ formset.empty_form.dosis.id_for_label }}" class="form-input" placeholder="Ej: 500mg" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                            </td>
-                            <td style="padding: 12px;">
-                                <input type="text" name="{{ formset.empty_form.via.html_name }}" id="{{ formset.empty_form.via.id_for_label }}" class="form-input" placeholder="Ej: Oral" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                            </td>
-                            <td style="padding: 12px;">
-                                <input type="text" name="{{ formset.empty_form.frecuencia.html_name }}" id="{{ formset.empty_form.frecuencia.id_for_label }}" class="form-input" placeholder="Ej: Cada 8 horas" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                            </td>
-                            <td style="padding: 12px; text-align: center;">
-                                <button type="button" class="btn-delete-new" style="background: none; border: none; cursor: pointer; padding: 4px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;">
-                                        <polyline points="3 6 5 6 21 6"/>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                        <line x1="10" y1="11" x2="10" y2="17"/>
-                                        <line x1="14" y1="11" x2="14" y2="17"/>
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- Lista de indicaciones agregadas -->
+                <div id="indicaciones-lista" style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #d1d5db;">
+                    <h4 style="font-size: 14px; font-weight: 600; color: #065f46; margin-bottom: 12px;">Indicaciones Agregadas:</h4>
+                    <div id="indicaciones-container" style="display: none;">
+                        <!-- Las indicaciones se agregarán aquí dinámicamente -->
+                    </div>
+                    <p id="no-indicaciones" style="font-size: 14px; color: #6b7280; text-align: center;">
+                        No hay indicaciones agregadas aún
+                    </p>
+                </div>
 
-                <button type="button" id="add-form" class="btn btn-success" style="margin-top: 16px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                    Agregar Indicación
-                </button>
+                <!-- Formset oculto para Django -->
+                {{ formset.management_form }}
+                <div id="formset-container" style="display: none;">
+                    {% for form in formset %}
+                        <div class="formset-form" data-form-index="{{ forloop.counter0 }}">
+                            {{ form.id }}
+                            {{ form.tipo }}
+                            {{ form.descripcion }}
+                            {{ form.dosis }}
+                            {{ form.via }}
+                            {{ form.frecuencia }}
+                            {{ form.DELETE }}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
 
             <!-- Información importante -->
@@ -306,102 +298,213 @@
 
 {% block extra_js %}
 <script>
-    // Script para manejar el Formset dinámico
-    document.addEventListener('DOMContentLoaded', () => {
-        const addButton = document.getElementById('add-form');
-        const totalForms = document.getElementById('id_indicaciones-TOTAL_FORMS');
-        const emptyFormTemplate = document.getElementById('empty-form-template');
-        const indicacionesTable = document.getElementById('indicaciones-table');
-
-        // Función para agregar nueva fila
-        addButton.addEventListener('click', () => {
-            // Si no existe la tabla, crearla
-            let tbody = document.getElementById('indicaciones-tbody');
-            if (!tbody) {
-                indicacionesTable.innerHTML = `
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #10b981; color: white;">
-                            <tr>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Tipo</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Descripción</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Dosis</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Vía</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;">Frecuencia</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; text-transform: uppercase; width: 80px;">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody id="indicaciones-tbody"></tbody>
-                    </table>
-                `;
-                tbody = document.getElementById('indicaciones-tbody');
+document.addEventListener('DOMContentLoaded', () => {
+    let indicacionesCount = 0;
+    const btnAgregar = document.getElementById('btn-agregar-indicacion');
+    const indicacionesContainer = document.getElementById('indicaciones-container');
+    const noIndicaciones = document.getElementById('no-indicaciones');
+    const totalForms = document.getElementById('id_indicaciones-TOTAL_FORMS');
+    
+    // Cargar indicaciones existentes si estamos editando
+    const formsetForms = document.querySelectorAll('.formset-form');
+    formsetForms.forEach((formDiv) => {
+        const tipoSelect = formDiv.querySelector('[name$="-tipo"]');
+        const descripcionInput = formDiv.querySelector('[name$="-descripcion"]');
+        const dosisInput = formDiv.querySelector('[name$="-dosis"]');
+        const viaInput = formDiv.querySelector('[name$="-via"]');
+        const frecuenciaInput = formDiv.querySelector('[name$="-frecuencia"]');
+        const deleteCheckbox = formDiv.querySelector('[name$="-DELETE"]');
+        const formIndex = formDiv.dataset.formIndex;
+        
+        if (descripcionInput && descripcionInput.value && !deleteCheckbox.checked) {
+            const tipoText = tipoSelect.options[tipoSelect.selectedIndex].text;
+            agregarIndicacionALista(
+                tipoText,
+                tipoSelect.value,
+                descripcionInput.value,
+                dosisInput.value,
+                viaInput.value,
+                frecuenciaInput.value,
+                formIndex
+            );
+            indicacionesCount++;
+        }
+    });
+    
+    // Actualizar visibilidad
+    if (indicacionesCount > 0) {
+        indicacionesContainer.style.display = 'block';
+        noIndicaciones.style.display = 'none';
+    }
+    
+    btnAgregar.addEventListener('click', () => {
+        const tipo = document.getElementById('new-tipo').value;
+        const descripcion = document.getElementById('new-descripcion').value.trim();
+        const dosis = document.getElementById('new-dosis').value.trim();
+        const via = document.getElementById('new-via').value.trim();
+        const frecuencia = document.getElementById('new-frecuencia').value.trim();
+        
+        if (!tipo) {
+            alert('Debe seleccionar un tipo de indicación');
+            document.getElementById('new-tipo').focus();
+            return;
+        }
+        
+        if (!descripcion) {
+            alert('La descripción es obligatoria');
+            document.getElementById('new-descripcion').focus();
+            return;
+        }
+        
+        // Agregar al formset oculto
+        const newFormIdx = parseInt(totalForms.value);
+        const tipoText = document.getElementById('new-tipo').options[document.getElementById('new-tipo').selectedIndex].text;
+        
+        // Crear campos ocultos para el formset
+        const formsetContainer = document.getElementById('formset-container');
+        const newFormDiv = document.createElement('div');
+        newFormDiv.className = 'formset-form';
+        newFormDiv.dataset.formIndex = newFormIdx;
+        newFormDiv.innerHTML = `
+            <input type="hidden" name="indicaciones-${newFormIdx}-id" value="">
+            <input type="hidden" name="indicaciones-${newFormIdx}-tipo" value="${tipo}">
+            <input type="hidden" name="indicaciones-${newFormIdx}-descripcion" value="${descripcion}">
+            <input type="hidden" name="indicaciones-${newFormIdx}-dosis" value="${dosis}">
+            <input type="hidden" name="indicaciones-${newFormIdx}-via" value="${via}">
+            <input type="hidden" name="indicaciones-${newFormIdx}-frecuencia" value="${frecuencia}">
+            <input type="hidden" name="indicaciones-${newFormIdx}-DELETE" value="">
+        `;
+        formsetContainer.appendChild(newFormDiv);
+        
+        // Agregar a la lista visual
+        agregarIndicacionALista(tipoText, tipo, descripcion, dosis, via, frecuencia, newFormIdx);
+        
+        // Incrementar contador
+        totalForms.value = newFormIdx + 1;
+        indicacionesCount++;
+        
+        // Limpiar campos
+        document.getElementById('new-tipo').value = '';
+        document.getElementById('new-descripcion').value = '';
+        document.getElementById('new-dosis').value = '';
+        document.getElementById('new-via').value = '';
+        document.getElementById('new-frecuencia').value = '';
+        
+        // Enfocar el primer campo
+        document.getElementById('new-tipo').focus();
+        
+        // Mostrar lista
+        indicacionesContainer.style.display = 'block';
+        noIndicaciones.style.display = 'none';
+    });
+    
+    function agregarIndicacionALista(tipoText, tipoValue, descripcion, dosis, via, frecuencia, index) {
+        const indicacionDiv = document.createElement('div');
+        indicacionDiv.style.cssText = 'background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #10b981;';
+        indicacionDiv.dataset.index = index;
+        
+        let detalles = '';
+        if (dosis) detalles += `<strong>Dosis:</strong> ${dosis} | `;
+        if (via) detalles += `<strong>Vía:</strong> ${via} | `;
+        if (frecuencia) detalles += `<strong>Frecuencia:</strong> ${frecuencia}`;
+        
+        // Limpiar el último " | " si existe
+        if (detalles.endsWith(' | ')) {
+            detalles = detalles.slice(0, -3);
+        }
+        
+        indicacionDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                            ${tipoText.toUpperCase()}
+                        </span>
+                        <span style="font-weight: 600; color: #1f2937;">${descripcion}</span>
+                    </div>
+                    ${detalles ? `<div style="font-size: 13px; color: #6b7280; margin-top: 4px;">${detalles}</div>` : ''}
+                </div>
+                <button type="button" class="btn-eliminar-indicacion" data-index="${index}" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 8px; flex-shrink: 0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        indicacionesContainer.appendChild(indicacionDiv);
+        
+        // Agregar evento de eliminar
+        indicacionDiv.querySelector('.btn-eliminar-indicacion').addEventListener('click', function() {
+            const idx = this.dataset.index;
+            
+            // Marcar como eliminado en el formset
+            const deleteInput = document.querySelector(`[name="indicaciones-${idx}-DELETE"]`);
+            if (deleteInput) {
+                deleteInput.value = 'on';
             }
-
-            const newFormIdx = parseInt(totalForms.value);
-            const newRow = emptyFormTemplate.querySelector('tr').cloneNode(true);
             
-            // Reemplazar __prefix__ con el índice real
-            newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, newFormIdx);
+            // Eliminar visualmente
+            indicacionDiv.remove();
+            indicacionesCount--;
             
-            // Agregar evento de eliminar para la nueva fila
-            const deleteBtn = newRow.querySelector('.btn-delete-new');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', function() {
-                    newRow.remove();
-                    // Si no quedan filas, mostrar mensaje de vacío
-                    if (tbody.children.length === 0) {
-                        indicacionesTable.innerHTML = `
-                            <div style="padding: 40px; text-align: center; color: #6b7280;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.3;">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                </svg>
-                                <p style="font-size: 14px;">No hay indicaciones médicas registradas</p>
-                                <p style="font-size: 12px; margin-top: 8px;">Presione el botón de abajo para agregar una</p>
-                            </div>
-                        `;
-                    }
-                });
+            if (indicacionesCount === 0) {
+                indicacionesContainer.style.display = 'none';
+                noIndicaciones.style.display = 'block';
             }
-            
-            tbody.appendChild(newRow);
-            totalForms.value = newFormIdx + 1;
         });
-    });
+    }
+});
 
-    // Validación antes de enviar
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const resumenEvolucion = document.getElementById('{{ form.resumen_evolucion.id_for_label }}');
-        const diagnosticoEgreso = document.getElementById('{{ form.diagnostico_egreso.id_for_label }}');
-        const condicionEgreso = document.getElementById('{{ form.condicion_egreso.id_for_label }}');
+// Validación antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const resumenEvolucion = document.getElementById('{{ form.resumen_evolucion.id_for_label }}');
+    const diagnosticoEgreso = document.getElementById('{{ form.diagnostico_egreso.id_for_label }}');
+    const condicionEgreso = document.getElementById('{{ form.condicion_egreso.id_for_label }}');
 
-        let errores = [];
+    let errores = [];
 
+    if (!resumenEvolucion.value.trim()) {
+        errores.push('Resumen de Evolución es obligatorio');
+        resumenEvolucion.style.borderColor = 'var(--primary-red)';
+    } else {
+        resumenEvolucion.style.borderColor = '';
+    }
+
+    if (!diagnosticoEgreso.value.trim()) {
+        errores.push('Diagnóstico de Egreso es obligatorio');
+        diagnosticoEgreso.style.borderColor = 'var(--primary-red)';
+    } else {
+        diagnosticoEgreso.style.borderColor = '';
+    }
+
+    if (!condicionEgreso.value) {
+        errores.push('Condición al Egreso es obligatoria');
+        condicionEgreso.style.borderColor = 'var(--primary-red)';
+    } else {
+        condicionEgreso.style.borderColor = '';
+    }
+
+    if (errores.length > 0) {
+        e.preventDefault();
+        alert('Por favor complete los campos obligatorios:\n\n' + errores.join('\n'));
+        // Hacer scroll al primer campo con error
         if (!resumenEvolucion.value.trim()) {
-            errores.push('Resumen de Evolución es obligatorio');
-            resumenEvolucion.style.borderColor = 'var(--primary-red)';
+            resumenEvolucion.focus();
+        } else if (!diagnosticoEgreso.value.trim()) {
+            diagnosticoEgreso.focus();
+        } else if (!condicionEgreso.value) {
+            condicionEgreso.focus();
         }
-
-        if (!diagnosticoEgreso.value.trim()) {
-            errores.push('Diagnóstico de Egreso es obligatorio');
-            diagnosticoEgreso.style.borderColor = 'var(--primary-red)';
-        }
-
-        if (!condicionEgreso.value) {
-            errores.push('Condición al Egreso es obligatoria');
-            condicionEgreso.style.borderColor = 'var(--primary-red)';
-        }
-
-        if (errores.length > 0) {
-            e.preventDefault();
-            alert('Por favor complete los campos obligatorios:\n\n' + errores.join('\n'));
-            return false;
-        }
-    });
+        return false;
+    }
+});
 </script>
 {% endblock %}
 
 <style>
-/* Estilos mejorados para los inputs del formulario */
+/* Estilos consistentes con los demás formularios del proyecto */
 .form-input,
 .form-select,
 .form-textarea {
@@ -429,27 +532,17 @@
     line-height: 1.5;
 }
 
-/* Hover effect para las filas de la tabla */
-.indicacion-row:hover {
-    background: #f9fafb;
-}
-
-/* Estilo para checkboxes de eliminar */
-input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+/* Botón de eliminar indicación */
+.btn-eliminar-indicacion:hover {
+    background: #dc2626 !important;
+    transform: scale(1.05);
+    transition: all 0.2s;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    #indicaciones-table table {
-        font-size: 12px;
-    }
-    
-    #indicaciones-table th,
-    #indicaciones-table td {
-        padding: 8px !important;
+    .form-grid {
+        grid-template-columns: 1fr !important;
     }
 }
 </style>
