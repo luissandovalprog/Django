@@ -14,6 +14,7 @@ from .forms import MadreForm, PartoForm, RecienNacidoForm, CorreccionForm, Epicr
 from auditoria.models import LogAuditoria
 from utils.crypto import crypto_service
 from django.http import HttpResponse
+from django.contrib.contenttypes.models import ContentType
 
 def get_client_ip(request):
     """Obtiene la IP del cliente"""
@@ -402,13 +403,12 @@ def recien_nacido_update(request, pk):
 # ============= VISTAS DE CORRECCIÓN =============
 
 @login_required
-def anexar_correccion(request, pk):
-    """Anexar corrección a un parto (solo médicos)"""
+def anexar_correccion_parto(request, pk):
+    """Anexar corrección a un Parto (RENOMBRADA de anexar_correccion)"""
     parto = get_object_or_404(Parto, pk=pk)
 
-    # Verificar permisos (solo médicos pueden anexar correcciones)
     if not request.user.puede_anexar_correccion:
-        messages.error(request, 'No tiene permisos para anexar correcciones. Solo médicos pueden realizar esta acción.')
+        messages.error(request, 'No tiene permisos para anexar correcciones.')
         return redirect('core:parto_detail', pk=parto.pk)
 
     if request.method == 'POST':
@@ -416,35 +416,113 @@ def anexar_correccion(request, pk):
         if form.is_valid():
             correccion = form.save(commit=False)
             correccion.usuario = request.user
-            correccion.parto = parto
+            correccion.content_object = parto  # Asignación genérica
             correccion.save()
 
-            # Registrar en auditoría
             LogAuditoria.registrar(
                 usuario=request.user,
-                accion='ANEXAR_CORRECCION',
+                accion='ANEXAR_CORRECCION_PARTO',
                 tabla_afectada='Correccion',
                 registro_id=correccion.id,
-                detalles=f'Corrección anexada - Parto: {parto.id}, Campo: {correccion.campo_corregido}, Justificación: {correccion.justificacion[:100]}',
+                detalles=f'Corrección anexada a Parto: {parto.id}, Campo: {correccion.campo_corregido}',
                 ip=get_client_ip(request)
             )
             
-            messages.success(request, 'Corrección anexada exitosamente. El registro original permanece intacto.')
+            messages.success(request, 'Corrección anexada al parto exitosamente.')
             return redirect('core:parto_detail', pk=parto.pk)
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
     else:
         form = CorreccionForm()
+
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
 
     context = {
         'form': form,
         'parto': parto,
         'madre': parto.madre,
-        'title': 'Anexar Corrección de Registro'
+        'title': 'Anexar Corrección de Parto'
     }
     return render(request, 'core/anexar_correccion_form.html', context)
+
+@login_required
+def anexar_correccion_madre(request, pk):
+    """Anexar corrección a una Madre (solo roles con permiso)"""
+    madre = get_object_or_404(Madre, pk=pk)
+
+    if not request.user.puede_anexar_correccion:
+        messages.error(request, 'No tiene permisos para anexar correcciones.')
+        return redirect('core:dashboard')
+
+    if request.method == 'POST':
+        form = CorreccionForm(request.POST)
+        if form.is_valid():
+            correccion = form.save(commit=False)
+            correccion.usuario = request.user
+            correccion.content_object = madre  # Asignación genérica
+            correccion.save()
+
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='ANEXAR_CORRECCION_MADRE',
+                tabla_afectada='Correccion',
+                registro_id=correccion.id,
+                detalles=f'Corrección anexada a Madre: {madre.id}, Campo: {correccion.campo_corregido}',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Corrección anexada a la madre exitosamente.')
+            return redirect('core:dashboard')
+    else:
+        form = CorreccionForm()
+
+    madre.nombre_descifrado = madre.get_nombre()
+    madre.rut_descifrado = madre.get_rut()
+
+    context = {
+        'form': form,
+        'madre': madre,
+        'title': 'Anexar Corrección de Madre'
+    }
+    return render(request, 'core/anexar_correccion_madre.html', context)
+
+@login_required
+def anexar_correccion_recien_nacido(request, pk):
+    """Anexar corrección a un RecienNacido (solo roles con permiso)"""
+    recien_nacido = get_object_or_404(RecienNacido, pk=pk)
+
+    if not request.user.puede_anexar_correccion:
+        messages.error(request, 'No tiene permisos para anexar correcciones.')
+        return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
+
+    if request.method == 'POST':
+        form = CorreccionForm(request.POST)
+        if form.is_valid():
+            correccion = form.save(commit=False)
+            correccion.usuario = request.user
+            correccion.content_object = recien_nacido  # Asignación genérica
+            correccion.save()
+
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='ANEXAR_CORRECCION_RN',
+                tabla_afectada='Correccion',
+                registro_id=correccion.id,
+                detalles=f'Corrección anexada a RN: {recien_nacido.id}, Campo: {correccion.campo_corregido}',
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, 'Corrección anexada al recién nacido exitosamente.')
+            return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
+    else:
+        form = CorreccionForm()
+
+    context = {
+        'form': form,
+        'recien_nacido': recien_nacido,
+        'parto': recien_nacido.parto,
+        'title': 'Anexar Corrección de Recién Nacido'
+    }
+    return render(request, 'core/anexar_correccion_recien_nacido.html', context)
 
 
 # ============= VISTAS DE EPICRISIS =============

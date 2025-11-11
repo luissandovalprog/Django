@@ -32,7 +32,9 @@ urlpatterns = [
     path('recien-nacido/<uuid:pk>/editar/', views.recien_nacido_update, name='recien_nacido_update'),
 
     # Corrección URLs
-    path('parto/<uuid:pk>/corregir/', views.anexar_correccion, name='anexar_correccion'),
+    path('parto/<uuid:pk>/corregir/', views.anexar_correccion_parto, name='anexar_correccion_parto'),
+    path('madre/<uuid:pk>/corregir/', views.anexar_correccion_madre, name='anexar_correccion_madre'),
+path('recien-nacido/<uuid:pk>/corregir/', views.anexar_correccion_recien_nacido, name='anexar_correccion_recien_nacido'),
 
     # Epicrisis URLs - NUEVAS RUTAS
     path('epicrisis/', views.epicrisis_list, name='epicrisis_list'),

@@ -10,7 +10,8 @@ from django.db import models
 from django.conf import settings
 import uuid
 from utils.crypto import crypto_service
-
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class Madre(models.Model):
     """
@@ -230,28 +231,26 @@ class RecienNacido(models.Model):
 
 class Correccion(models.Model):
     """
-    Modelo de Correcciones
-    CORREGIDO: Validación de permisos en el modelo
+    Modelo de Correcciones con Relaciones Genéricas
+    Permite anexar correcciones a Parto, Madre o RecienNacido
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parto = models.ForeignKey(Parto, on_delete=models.PROTECT, related_name='correcciones')
+    
+    # Campos para Relación Genérica
+    content_type = models.ForeignKey(ContentType, on_delete=models.PROTECT)
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='correcciones_realizadas'
     )
     fecha_correccion = models.DateTimeField(auto_now_add=True)
-
-    CAMPO_CHOICES = [
-        ('tipo_parto', 'Tipo de Parto'),
-        ('peso_gramos', 'Peso RN (g)'),
-        ('talla_cm', 'Talla RN (cm)'),
-        ('apgar_1_min', 'APGAR 1 min'),
-        ('apgar_5_min', 'APGAR 5 min'),
-        ('observaciones', 'Observaciones'),
-        ('otro', 'Otro'),
-    ]
-    campo_corregido = models.CharField(max_length=100, choices=CAMPO_CHOICES)
+    
+    # Campo corregido ahora es texto libre (sin choices)
+    campo_corregido = models.CharField(max_length=100)
+    
     valor_original = models.TextField(blank=True)
     valor_nuevo = models.TextField()
     justificacion = models.TextField()
@@ -261,16 +260,22 @@ class Correccion(models.Model):
         ordering = ['-fecha_correccion']
         verbose_name = 'Corrección de Registro'
         verbose_name_plural = 'Correcciones de Registros'
+        indexes = [
+            models.Index(fields=['content_type', 'object_id']),
+        ]
 
     def __str__(self):
-        return f"Corrección en {self.parto_id} por {self.usuario.username}"
+        return f"Corrección en {self.content_type.model} - {self.campo_corregido}"
     
-    # NUEVO: Método de validación
     def save(self, *args, **kwargs):
         """Valida que el usuario tenga permisos antes de guardar"""
         if not self.usuario.puede_anexar_correccion:
             raise PermissionError("Usuario sin permisos para anexar correcciones")
         super().save(*args, **kwargs)
+    
+    def get_tipo_registro(self):
+        """Retorna el tipo de registro al que pertenece la corrección"""
+        return self.content_type.model
 
 
 class Indicacion(models.Model):
