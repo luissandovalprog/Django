@@ -286,28 +286,96 @@ class RecienNacidoForm(forms.ModelForm):
 
 class CorreccionForm(forms.ModelForm):
     """Formulario para anexar correcciones (sin cambios)"""
+
+    CAMPO_CHOICES_MADRE = [
+        ('', 'Seleccione un campo...'),
+        ('rut', 'RUT'),
+        ('nombre', 'Nombre Completo'),
+        ('telefono', 'Teléfono'),
+        ('direccion', 'Dirección'),
+        ('fecha_nacimiento', 'Fecha de Nacimiento'),
+        ('nacionalidad', 'Nacionalidad'),
+        ('prevision', 'Previsión'),
+        ('antecedentes_medicos', 'Antecedentes Médicos'),
+    ]
+    
+    CAMPO_CHOICES_PARTO = [
+        ('', 'Seleccione un campo...'),
+        ('tipo_parto', 'Tipo de Parto'),
+        ('anestesia', 'Anestesia'),
+        ('fecha_parto', 'Fecha y Hora del Parto'),
+        ('edad_gestacional', 'Edad Gestacional'),
+    ]
+    
+    CAMPO_CHOICES_RN = [
+        ('', 'Seleccione un campo...'),
+        ('rut_provisorio', 'RUT Provisorio'),
+        ('estado_al_nacer', 'Estado al Nacer'),
+        ('sexo', 'Sexo'),
+        ('peso_gramos', 'Peso (gramos)'),
+        ('talla_cm', 'Talla (cm)'),
+        ('apgar_1_min', 'APGAR 1 minuto'),
+        ('apgar_5_min', 'APGAR 5 minutos'),
+        ('profilaxis_vit_k', 'Profilaxis Vitamina K'),
+        ('profilaxis_oftalmica', 'Profilaxis Oftálmica'),
+    ]
+    
+    campo_corregido = forms.ChoiceField(
+        choices=[],  # Se establecerá dinámicamente en __init__
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Campo a Corregir'
+    )
     
     class Meta:
         model = Correccion
         fields = ['campo_corregido', 'valor_original', 'valor_nuevo', 'justificacion']
         widgets = {
-            'campo_corregido': forms.Select(attrs={'class': 'form-control'}),
-            'valor_original': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
-            'valor_nuevo': forms.TextInput(attrs={'class': 'form-control'}),
-            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'valor_original': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'readonly': True,
+                'placeholder': 'Valor actual en el sistema'
+            }),
+            'valor_nuevo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingrese el valor corregido'
+            }),
+            'justificacion': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 4,
+                'placeholder': 'Justificación médica detallada (mínimo 20 caracteres)'
+            }),
         }
         labels = {
             'campo_corregido': 'Campo a Corregir',
             'valor_original': 'Valor Original',
             'valor_nuevo': 'Valor Corregido',
-            'justificacion': 'Justificación',
+            'justificacion': 'Justificación Médica',
         }
+    
+    def __init__(self, *args, **kwargs):
+        # Extraer el tipo de modelo del contexto (se pasará desde la vista)
+        self.tipo_modelo = kwargs.pop('tipo_modelo', 'parto')
+        super().__init__(*args, **kwargs)
+        
+        # Establecer las choices según el tipo de modelo
+        if self.tipo_modelo == 'madre':
+            self.fields['campo_corregido'].choices = self.CAMPO_CHOICES_MADRE
+        elif self.tipo_modelo == 'recien_nacido':
+            self.fields['campo_corregido'].choices = self.CAMPO_CHOICES_RN
+        else:  # 'parto' por defecto
+            self.fields['campo_corregido'].choices = self.CAMPO_CHOICES_PARTO
 
     def clean_justificacion(self):
         justificacion = self.cleaned_data.get('justificacion', '')
         if len(justificacion) < 20:
             raise ValidationError('La justificación debe tener al menos 20 caracteres.')
         return justificacion
+    
+    def clean_valor_nuevo(self):
+        valor_nuevo = self.cleaned_data.get('valor_nuevo', '')
+        if not valor_nuevo or valor_nuevo.strip() == '':
+            raise ValidationError('El valor corregido no puede estar vacío.')
+        return valor_nuevo.strip()
 
 
 class EpicrisisForm(forms.Form):

@@ -297,7 +297,8 @@ def parto_detail(request, pk):
     parto.madre.nombre_descifrado = parto.madre.get_nombre()
     parto.madre.rut_descifrado = parto.madre.get_rut()
     recien_nacidos = parto.recien_nacidos.all()
-    correcciones = parto.correcciones.all().order_by('-fecha_correccion')
+    parto_content_type = ContentType.objects.get_for_model(Parto)
+    correcciones = Correccion.objects.filter(content_type=parto_content_type, object_id=parto.pk).order_by('-fecha_correccion')
     
     context = {
         'parto': parto,
@@ -404,7 +405,7 @@ def recien_nacido_update(request, pk):
 
 @login_required
 def anexar_correccion_parto(request, pk):
-    """Anexar corrección a un Parto (RENOMBRADA de anexar_correccion)"""
+    """Anexar corrección a un Parto"""
     parto = get_object_or_404(Parto, pk=pk)
 
     if not request.user.puede_anexar_correccion:
@@ -412,11 +413,11 @@ def anexar_correccion_parto(request, pk):
         return redirect('core:parto_detail', pk=parto.pk)
 
     if request.method == 'POST':
-        form = CorreccionForm(request.POST)
+        form = CorreccionForm(request.POST, tipo_modelo='parto')  # CAMBIO: Agregar tipo_modelo
         if form.is_valid():
             correccion = form.save(commit=False)
             correccion.usuario = request.user
-            correccion.content_object = parto  # Asignación genérica
+            correccion.content_object = parto
             correccion.save()
 
             LogAuditoria.registrar(
@@ -431,7 +432,7 @@ def anexar_correccion_parto(request, pk):
             messages.success(request, 'Corrección anexada al parto exitosamente.')
             return redirect('core:parto_detail', pk=parto.pk)
     else:
-        form = CorreccionForm()
+        form = CorreccionForm(tipo_modelo='parto')  # CAMBIO: Agregar tipo_modelo
 
     parto.madre.nombre_descifrado = parto.madre.get_nombre()
     parto.madre.rut_descifrado = parto.madre.get_rut()
@@ -446,7 +447,7 @@ def anexar_correccion_parto(request, pk):
 
 @login_required
 def anexar_correccion_madre(request, pk):
-    """Anexar corrección a una Madre (solo roles con permiso)"""
+    """Anexar corrección a una Madre"""
     madre = get_object_or_404(Madre, pk=pk)
 
     if not request.user.puede_anexar_correccion:
@@ -454,11 +455,11 @@ def anexar_correccion_madre(request, pk):
         return redirect('core:dashboard')
 
     if request.method == 'POST':
-        form = CorreccionForm(request.POST)
+        form = CorreccionForm(request.POST, tipo_modelo='madre')  # CAMBIO: Agregar tipo_modelo
         if form.is_valid():
             correccion = form.save(commit=False)
             correccion.usuario = request.user
-            correccion.content_object = madre  # Asignación genérica
+            correccion.content_object = madre
             correccion.save()
 
             LogAuditoria.registrar(
@@ -473,7 +474,7 @@ def anexar_correccion_madre(request, pk):
             messages.success(request, 'Corrección anexada a la madre exitosamente.')
             return redirect('core:dashboard')
     else:
-        form = CorreccionForm()
+        form = CorreccionForm(tipo_modelo='madre')  # CAMBIO: Agregar tipo_modelo
 
     madre.nombre_descifrado = madre.get_nombre()
     madre.rut_descifrado = madre.get_rut()
@@ -487,7 +488,7 @@ def anexar_correccion_madre(request, pk):
 
 @login_required
 def anexar_correccion_recien_nacido(request, pk):
-    """Anexar corrección a un RecienNacido (solo roles con permiso)"""
+    """Anexar corrección a un RecienNacido"""
     recien_nacido = get_object_or_404(RecienNacido, pk=pk)
 
     if not request.user.puede_anexar_correccion:
@@ -495,11 +496,11 @@ def anexar_correccion_recien_nacido(request, pk):
         return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
 
     if request.method == 'POST':
-        form = CorreccionForm(request.POST)
+        form = CorreccionForm(request.POST, tipo_modelo='recien_nacido')  # CAMBIO: Agregar tipo_modelo
         if form.is_valid():
             correccion = form.save(commit=False)
             correccion.usuario = request.user
-            correccion.content_object = recien_nacido  # Asignación genérica
+            correccion.content_object = recien_nacido
             correccion.save()
 
             LogAuditoria.registrar(
@@ -514,7 +515,7 @@ def anexar_correccion_recien_nacido(request, pk):
             messages.success(request, 'Corrección anexada al recién nacido exitosamente.')
             return redirect('core:parto_detail', pk=recien_nacido.parto.pk)
     else:
-        form = CorreccionForm()
+        form = CorreccionForm(tipo_modelo='recien_nacido')  # CAMBIO: Agregar tipo_modelo
 
     context = {
         'form': form,

@@ -1,66 +1,177 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto animacion-entrada">
-    <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg">
-        <div class="flex items-start gap-3">
-            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            <div>
-                <p class="font-semibold">Anexar Corrección - Trazabilidad Completa</p>
-                <p class="text-sm mt-1">Esta acción NO sobrescribe el dato original. Se anexa una corrección que queda registrada en auditoría.</p>
-            </div>
+<div class="form-container" style="max-width: 900px; margin: 0 auto;">
+    
+    <!-- Alerta de Trazabilidad -->
+    <div class="alert alert-warning" style="margin-bottom: 24px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+            <strong>Anexar Corrección - Trazabilidad Completa</strong>
+            <p>Esta acción NO sobrescribe el dato original. Se anexa una corrección que queda registrada en auditoría según Ley 20.584.</p>
         </div>
     </div>
 
-    <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ title }}</h2>
+    <div class="card">
+        <h2 class="card-header">{{ title }}</h2>
 
-    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 class="font-semibold text-blue-800">Información del Registro</h3>
-        <div class="grid grid-cols-2 gap-4 mt-2">
-            <div>
-                <p class="text-sm text-gray-600">Madre: <strong class="text-gray-900">{{ madre.get_nombre }}</strong> (RUT: {{ madre.get_rut }})</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600">Registrado por: <strong class="text-gray-900">{{ parto.usuario_registro.nombre_completo }}</strong></p>
+        <!-- Información del Registro -->
+        <div style="background: #e0f2fe; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary-blue);">
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--gray-900); margin-bottom: 8px;">
+                Información del Registro
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 14px;">
+                <div>
+                    <strong>Madre:</strong> {{ madre.nombre_descifrado }}
+                </div>
+                <div>
+                    <strong>RUT:</strong> {{ madre.rut_descifrado }}
+                </div>
+                <div>
+                    <strong>Tipo Parto:</strong> 
+                    <span class="badge {% if 'Cesárea' in parto.tipo_parto %}badge-yellow{% else %}badge-green{% endif %}">
+                        {{ parto.tipo_parto }}
+                    </span>
+                </div>
+                <div>
+                    <strong>Registrado por:</strong> {{ parto.usuario_registro.nombre_completo }}
+                </div>
             </div>
         </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.campo_corregido.id_for_label }}" class="form-label required">
+                    {{ form.campo_corregido.label }}
+                </label>
+                {{ form.campo_corregido }}
+                <p class="form-hint">Ej: tipo_parto, anestesia, edad_gestacional</p>
+                {% if form.campo_corregido.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                        {{ form.campo_corregido.errors|join:", " }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.valor_original.id_for_label }}" class="form-label">
+                        {{ form.valor_original.label }}
+                    </label>
+                    {{ form.valor_original }}
+                    <p class="form-hint">Valor actual en el sistema</p>
+                    {% if form.valor_original.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.valor_original.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.valor_nuevo.id_for_label }}" class="form-label required">
+                        {{ form.valor_nuevo.label }}
+                    </label>
+                    {{ form.valor_nuevo }}
+                    <p class="form-hint">Valor corregido</p>
+                    {% if form.valor_nuevo.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.valor_nuevo.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.justificacion.id_for_label }}" class="form-label required">
+                    {{ form.justificacion.label }}
+                </label>
+                {{ form.justificacion }}
+                <p class="form-hint">Justificación médica detallada (mínimo 20 caracteres)</p>
+                {% if form.justificacion.errors %}
+                    <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                        {{ form.justificacion.errors|join:", " }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Información Legal -->
+            <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b; flex-shrink: 0;">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <div>
+                        <p style="font-weight: 600; color: #92400e; margin-bottom: 8px;">
+                            Marco Legal - Ley 20.584
+                        </p>
+                        <ul style="font-size: 14px; color: #92400e; list-style: disc; margin-left: 20px; line-height: 1.8;">
+                            <li>El registro original permanece intacto en la base de datos</li>
+                            <li>Esta corrección se anexa como registro adicional</li>
+                            <li>Queda registrado quién, cuándo y por qué se realizó la corrección</li>
+                            <li>Solo usuarios con rol de Médico pueden anexar correcciones</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Anexar Corrección
+                </button>
+            </div>
+        </form>
     </div>
-
-    <form method="post" class="tarjeta space-y-6">
-        {% csrf_token %}
-
-        <div>
-            <label for="{{ form.campo_corregido.id_for_label }}" class="etiqueta">{{ form.campo_corregido.label }} *</label>
-            {{ form.campo_corregido }}
-            {% if form.campo_corregido.errors %}<p class="mt-1 text-sm text-red-600">{{ form.campo_corregido.errors|join:", " }}</p>{% endif %}
-        </div>
-
-        <div class="grid grid-cols-2 gap-6">
-            <div>
-                <label for="{{ form.valor_original.id_for_label }}" class="etiqueta">{{ form.valor_original.label }}</label>
-                {{ form.valor_original }}
-                <p class="mt-1 text-xs text-gray-500">Este valor se autocompletará (próximamente).</p>
-            </div>
-            <div>
-                <label for="{{ form.valor_nuevo.id_for_label }}" class="etiqueta">{{ form.valor_nuevo.label }} *</label>
-                {{ form.valor_nuevo }}
-                {% if form.valor_nuevo.errors %}<p class="mt-1 text-sm text-red-600">{{ form.valor_nuevo.errors|join:", " }}</p>{% endif %}
-            </div>
-        </div>
-
-        <div>
-            <label for="{{ form.justificacion.id_for_label }}" class="etiqueta">{{ form.justificacion.label }} *</label>
-            {{ form.justificacion }}
-            {% if form.justificacion.errors %}<p class="mt-1 text-sm text-red-600">{{ form.justificacion.errors|join:", " }}</p>{% endif %}
-        </div>
-
-        <div class="pt-4 flex justify-end gap-3">
-            <a href="{% url 'core:parto_detail' parto.pk %}" class="boton boton-gris">Cancelar</a>
-            <button type="submit" class="boton boton-primario">
-                Anexar Corrección
-            </button>
-        </div>
-    </form>
 </div>
+
+{% block extra_js %}
+<script>
+// Contador de caracteres para justificación
+document.addEventListener('DOMContentLoaded', function() {
+    const justificacionTextarea = document.getElementById('{{ form.justificacion.id_for_label }}');
+    
+    if (justificacionTextarea) {
+        // Crear contador
+        const counter = document.createElement('p');
+        counter.style.fontSize = '13px';
+        counter.style.color = 'var(--gray-500)';
+        counter.style.marginTop = '4px';
+        counter.style.textAlign = 'right';
+        justificacionTextarea.parentElement.appendChild(counter);
+        
+        // Actualizar contador
+        function updateCounter() {
+            const length = justificacionTextarea.value.length;
+            counter.textContent = `${length} / 20 caracteres mínimos`;
+            
+            if (length < 20) {
+                counter.style.color = 'var(--primary-red)';
+            } else {
+                counter.style.color = 'var(--primary-green)';
+            }
+        }
+        
+        justificacionTextarea.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

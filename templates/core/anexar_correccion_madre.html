@@ -48,8 +48,13 @@
                 <label for="{{ form.campo_corregido.id_for_label }}" class="form-label required">
                     {{ form.campo_corregido.label }}
                 </label>
-                {{ form.campo_corregido }}
-                <p class="form-hint">Ej: rut, nombre, telefono, direccion, prevision</p>
+                <input type="text" 
+                       id="{{ form.campo_corregido.id_for_label }}" 
+                       name="{{ form.campo_corregido.name }}"
+                       class="form-input" 
+                       placeholder="Ej: rut, nombre, telefono, direccion, prevision"
+                       value="{{ form.campo_corregido.value|default:'' }}">
+                <p class="form-hint">Ingrese el nombre del campo a corregir</p>
                 {% if form.campo_corregido.errors %}
                     <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
                         {{ form.campo_corregido.errors|join:", " }}
@@ -62,7 +67,12 @@
                     <label for="{{ form.valor_original.id_for_label }}" class="form-label">
                         {{ form.valor_original.label }}
                     </label>
-                    {{ form.valor_original }}
+                    <input type="text" 
+                           id="{{ form.valor_original.id_for_label }}" 
+                           name="{{ form.valor_original.name }}"
+                           class="form-input" 
+                           placeholder="Valor actual"
+                           value="{{ form.valor_original.value|default:'' }}">
                     <p class="form-hint">Valor actual en el sistema</p>
                     {% if form.valor_original.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -75,7 +85,12 @@
                     <label for="{{ form.valor_nuevo.id_for_label }}" class="form-label required">
                         {{ form.valor_nuevo.label }}
                     </label>
-                    {{ form.valor_nuevo }}
+                    <input type="text" 
+                           id="{{ form.valor_nuevo.id_for_label }}" 
+                           name="{{ form.valor_nuevo.name }}"
+                           class="form-input" 
+                           placeholder="Valor corregido"
+                           value="{{ form.valor_nuevo.value|default:'' }}">
                     <p class="form-hint">Valor corregido</p>
                     {% if form.valor_nuevo.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -89,7 +104,11 @@
                 <label for="{{ form.justificacion.id_for_label }}" class="form-label required">
                     {{ form.justificacion.label }}
                 </label>
-                {{ form.justificacion }}
+                <textarea id="{{ form.justificacion.id_for_label }}" 
+                          name="{{ form.justificacion.name }}"
+                          class="form-textarea" 
+                          rows="4"
+                          placeholder="Justificación médica detallada de la corrección">{{ form.justificacion.value|default:'' }}</textarea>
                 <p class="form-hint">Justificación médica detallada (mínimo 20 caracteres)</p>
                 {% if form.justificacion.errors %}
                     <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">

@@ -3,20 +3,6 @@
 
 {% block content %}
 <div class="form-container" style="max-width: 900px; margin: 0 auto;">
-    
-    <!-- Alerta de Trazabilidad -->
-    <div class="alert alert-warning" style="margin-bottom: 24px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <div>
-            <strong>Anexar Corrección - Trazabilidad Completa</strong>
-            <p>Esta acción NO sobrescribe el dato original. Se anexa una corrección que queda registrada en auditoría según Ley 20.584.</p>
-        </div>
-    </div>
-
     <div class="card">
         <h2 class="card-header">{{ title }}</h2>
 
@@ -68,7 +54,12 @@
                     <label for="{{ form.valor_original.id_for_label }}" class="form-label">
                         {{ form.valor_original.label }}
                     </label>
-                    {{ form.valor_original }}
+                    <input type="text" 
+                           id="{{ form.valor_original.id_for_label }}" 
+                           name="{{ form.valor_original.name }}"
+                           class="form-input" 
+                           placeholder="Valor actual"
+                           value="{{ form.valor_original.value|default:'' }}">
                     <p class="form-hint">Valor actual en el sistema</p>
                     {% if form.valor_original.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
@@ -81,7 +72,12 @@
                     <label for="{{ form.valor_nuevo.id_for_label }}" class="form-label required">
                         {{ form.valor_nuevo.label }}
                     </label>
-                    {{ form.valor_nuevo }}
+                    <input type="text" 
+                           id="{{ form.valor_nuevo.id_for_label }}" 
+                           name="{{ form.valor_nuevo.name }}"
+                           class="form-input" 
+                           placeholder="Valor corregido"
+                           value="{{ form.valor_nuevo.value|default:'' }}">
                     <p class="form-hint">Valor corregido</p>
                     {% if form.valor_nuevo.errors %}
                         <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
