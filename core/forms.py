@@ -285,8 +285,12 @@ class RecienNacidoForm(forms.ModelForm):
 
 
 class CorreccionForm(forms.ModelForm):
-    """Formulario para anexar correcciones (sin cambios)"""
-
+    """
+    Formulario mejorado para anexar correcciones
+    Incluye dropdown dinámico y autocompletado de valor original
+    """
+    
+    # Campos permitidos por tipo de modelo
     CAMPO_CHOICES_MADRE = [
         ('', 'Seleccione un campo...'),
         ('rut', 'RUT'),
@@ -297,6 +301,7 @@ class CorreccionForm(forms.ModelForm):
         ('nacionalidad', 'Nacionalidad'),
         ('prevision', 'Previsión'),
         ('antecedentes_medicos', 'Antecedentes Médicos'),
+        ('pertenece_pueblo_originario', 'Pertenece a Pueblo Originario'),
     ]
     
     CAMPO_CHOICES_PARTO = [
@@ -304,7 +309,7 @@ class CorreccionForm(forms.ModelForm):
         ('tipo_parto', 'Tipo de Parto'),
         ('anestesia', 'Anestesia'),
         ('fecha_parto', 'Fecha y Hora del Parto'),
-        ('edad_gestacional', 'Edad Gestacional'),
+        ('edad_gestacional', 'Edad Gestacional (semanas)'),
     ]
     
     CAMPO_CHOICES_RN = [
@@ -321,8 +326,11 @@ class CorreccionForm(forms.ModelForm):
     ]
     
     campo_corregido = forms.ChoiceField(
-        choices=[],  # Se establecerá dinámicamente en __init__
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        choices=[],
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_campo_corregido'
+        }),
         label='Campo a Corregir'
     )
     
@@ -331,17 +339,20 @@ class CorreccionForm(forms.ModelForm):
         fields = ['campo_corregido', 'valor_original', 'valor_nuevo', 'justificacion']
         widgets = {
             'valor_original': forms.TextInput(attrs={
-                'class': 'form-control', 
+                'class': 'form-input', 
                 'readonly': True,
-                'placeholder': 'Valor actual en el sistema'
+                'id': 'id_valor_original',
+                'placeholder': 'Se cargará automáticamente...'
             }),
             'valor_nuevo': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'form-input',
+                'id': 'id_valor_nuevo',
                 'placeholder': 'Ingrese el valor corregido'
             }),
             'justificacion': forms.Textarea(attrs={
-                'class': 'form-control', 
+                'class': 'form-textarea', 
                 'rows': 4,
+                'id': 'id_justificacion',
                 'placeholder': 'Justificación médica detallada (mínimo 20 caracteres)'
             }),
         }
@@ -353,7 +364,6 @@ class CorreccionForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
-        # Extraer el tipo de modelo del contexto (se pasará desde la vista)
         self.tipo_modelo = kwargs.pop('tipo_modelo', 'parto')
         super().__init__(*args, **kwargs)
         
@@ -368,13 +378,13 @@ class CorreccionForm(forms.ModelForm):
     def clean_justificacion(self):
         justificacion = self.cleaned_data.get('justificacion', '')
         if len(justificacion) < 20:
-            raise ValidationError('La justificación debe tener al menos 20 caracteres.')
+            raise forms.ValidationError('La justificación debe tener al menos 20 caracteres.')
         return justificacion
     
     def clean_valor_nuevo(self):
         valor_nuevo = self.cleaned_data.get('valor_nuevo', '')
         if not valor_nuevo or valor_nuevo.strip() == '':
-            raise ValidationError('El valor corregido no puede estar vacío.')
+            raise forms.ValidationError('El valor corregido no puede estar vacío.')
         return valor_nuevo.strip()
 
 

@@ -34,7 +34,7 @@ urlpatterns = [
     # Corrección URLs
     path('parto/<uuid:pk>/corregir/', views.anexar_correccion_parto, name='anexar_correccion_parto'),
     path('madre/<uuid:pk>/corregir/', views.anexar_correccion_madre, name='anexar_correccion_madre'),
-path('recien-nacido/<uuid:pk>/corregir/', views.anexar_correccion_recien_nacido, name='anexar_correccion_recien_nacido'),
+    path('recien-nacido/<uuid:pk>/corregir/', views.anexar_correccion_recien_nacido, name='anexar_correccion_recien_nacido'),
 
     # Epicrisis URLs - NUEVAS RUTAS
     path('epicrisis/', views.epicrisis_list, name='epicrisis_list'),
@@ -46,4 +46,7 @@ path('recien-nacido/<uuid:pk>/corregir/', views.anexar_correccion_recien_nacido,
     path('partogramas/', views.partograma_list, name='partograma_list'),
     path('parto/<uuid:parto_pk>/partograma/crear/', views.partograma_create, name='partograma_create'),
     path('parto/<uuid:parto_pk>/partograma/editar/', views.partograma_update, name='partograma_update'),
+
+    # AJAX endpoint para correcciones
+    path('api/obtener-valor-campo/', views.obtener_valor_campo, name='obtener_valor_campo'),
 ]

@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 from django.utils import timezone
 from .models import Madre, Parto, RecienNacido, Correccion, Indicacion
@@ -15,6 +16,8 @@ from auditoria.models import LogAuditoria
 from utils.crypto import crypto_service
 from django.http import HttpResponse
 from django.contrib.contenttypes.models import ContentType
+import json
+from django.http import JsonResponse
 
 def get_client_ip(request):
     """Obtiene la IP del cliente"""
@@ -1141,3 +1144,153 @@ def descargar_epicrisis_pdf(request, pk):
     )
     
     return response
+
+@login_required
+@require_http_methods(["POST"])
+def obtener_valor_campo(request):
+    """
+    Endpoint AJAX para obtener el valor actual de un campo de un modelo
+    
+    Parámetros POST:
+    - tipo_modelo: 'madre', 'parto' o 'recien_nacido'
+    - objeto_id: UUID del objeto
+    - campo: Nombre del campo a consultar
+    
+    Retorna JSON:
+    - success: bool
+    - valor: str (valor del campo)
+    - error: str (en caso de error)
+    """
+    
+    # Verificar permisos
+    if not request.user.puede_anexar_correccion:
+        return JsonResponse({
+            'success': False,
+            'error': 'No tiene permisos para realizar esta acción'
+        }, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        tipo_modelo = data.get('tipo_modelo')
+        objeto_id = data.get('objeto_id')
+        campo = data.get('campo')
+        
+        if not all([tipo_modelo, objeto_id, campo]):
+            return JsonResponse({
+                'success': False,
+                'error': 'Faltan parámetros requeridos'
+            }, status=400)
+        
+        # Obtener el objeto según el tipo
+        if tipo_modelo == 'madre':
+            objeto = get_object_or_404(Madre, pk=objeto_id)
+            valor = _obtener_valor_madre(objeto, campo)
+        elif tipo_modelo == 'parto':
+            objeto = get_object_or_404(Parto, pk=objeto_id)
+            valor = _obtener_valor_parto(objeto, campo)
+        elif tipo_modelo == 'recien_nacido':
+            objeto = get_object_or_404(RecienNacido, pk=objeto_id)
+            valor = _obtener_valor_recien_nacido(objeto, campo)
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tipo de modelo inválido'
+            }, status=400)
+        
+        # Registrar en auditoría (opcional)
+        LogAuditoria.registrar(
+            usuario=request.user,
+            accion='CONSULTA_VALOR_CAMPO',
+            tabla_afectada=tipo_modelo.capitalize(),
+            registro_id=objeto_id,
+            detalles=f'Consulta de campo: {campo}',
+            ip=get_client_ip(request)
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'valor': str(valor) if valor is not None else ''
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'JSON inválido'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def _obtener_valor_madre(madre, campo):
+    """
+    Obtener valor de un campo de Madre
+    Maneja campos encriptados correctamente
+    """
+    # Campos encriptados
+    if campo == 'rut':
+        return madre.get_rut()
+    elif campo == 'nombre':
+        return madre.get_nombre()
+    elif campo == 'telefono':
+        return madre.get_telefono()
+    
+    # Campos normales
+    elif campo == 'direccion':
+        return madre.direccion
+    elif campo == 'fecha_nacimiento':
+        return madre.fecha_nacimiento.strftime('%Y-%m-%d') if madre.fecha_nacimiento else ''
+    elif campo == 'nacionalidad':
+        return madre.nacionalidad
+    elif campo == 'prevision':
+        return madre.prevision
+    elif campo == 'antecedentes_medicos':
+        return madre.antecedentes_medicos
+    elif campo == 'pertenece_pueblo_originario':
+        return 'Sí' if madre.pertenece_pueblo_originario else 'No'
+    
+    return ''
+
+
+def _obtener_valor_parto(parto, campo):
+    """
+    Obtener valor de un campo de Parto
+    """
+    if campo == 'tipo_parto':
+        return parto.tipo_parto
+    elif campo == 'anestesia':
+        return parto.anestesia
+    elif campo == 'fecha_parto':
+        return parto.fecha_parto.strftime('%Y-%m-%d %H:%M') if parto.fecha_parto else ''
+    elif campo == 'edad_gestacional':
+        return parto.edad_gestacional
+    
+    return ''
+
+
+def _obtener_valor_recien_nacido(rn, campo):
+    """
+    Obtener valor de un campo de RecienNacido
+    """
+    if campo == 'rut_provisorio':
+        return rn.rut_provisorio
+    elif campo == 'estado_al_nacer':
+        return rn.estado_al_nacer
+    elif campo == 'sexo':
+        return rn.sexo
+    elif campo == 'peso_gramos':
+        return rn.peso_gramos
+    elif campo == 'talla_cm':
+        return rn.talla_cm
+    elif campo == 'apgar_1_min':
+        return rn.apgar_1_min
+    elif campo == 'apgar_5_min':
+        return rn.apgar_5_min
+    elif campo == 'profilaxis_vit_k':
+        return 'Sí' if rn.profilaxis_vit_k else 'No'
+    elif campo == 'profilaxis_oftalmica':
+        return 'Sí' if rn.profilaxis_oftalmica else 'No'
+    
+    return ''
