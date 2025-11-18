@@ -10,8 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from auditoria.models import LogAuditoria
 from .models import Usuario, Rol
-from .forms import CustomUsuarioCreationForm, CustomUsuarioChangeForm
-
+from .forms import CustomUsuarioCreationForm, CustomUsuarioChangeForm, RolForm
 
 def get_client_ip(request):
     """Obtiene la IP del cliente"""
@@ -89,6 +88,112 @@ def es_admin_sistema(user):
     """Verifica si el usuario es administrador del sistema"""
     return user.is_authenticated and (user.is_superuser or user.puede_gestionar_usuarios)
 
+@login_required
+@user_passes_test(es_admin_sistema, login_url='core:dashboard')
+def rol_list(request):
+    """Listado de roles - SOLO Admin Sistema y Supervisor"""
+    roles = Rol.objects.all().order_by('nombre')
+    
+    # Contar usuarios por rol
+    for rol in roles:
+        rol.total_usuarios = Usuario.objects.filter(rol=rol).count()
+    
+    context = {
+        'roles': roles,
+        'total_roles': roles.count(),
+    }
+    return render(request, 'accounts/rol_list.html', context)
+
+
+@login_required
+@user_passes_test(es_admin_sistema, login_url='core:dashboard')
+def rol_create(request):
+    """Crear nuevo rol"""
+    if request.method == 'POST':
+        form = RolForm(request.POST)
+        if form.is_valid():
+            rol = form.save()
+            
+            # Registrar en auditoría
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='CREAR_ROL',
+                tabla_afectada='Rol',
+                registro_id=rol.id,
+                detalles=f"Rol creado: {rol.nombre} - {rol.descripcion}",
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, f'Rol "{rol.nombre}" creado exitosamente.')
+            return redirect('accounts:rol_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f'{form.fields.get(field, {}).label or field}: {error}')
+    else:
+        form = RolForm()
+    
+    context = {
+        'form': form,
+        'title': 'Nuevo Rol',
+        'is_new': True
+    }
+    return render(request, 'accounts/rol_form.html', context)
+
+
+@login_required
+@user_passes_test(es_admin_sistema, login_url='core:dashboard')
+def rol_update(request, pk):
+    """Editar rol existente"""
+    rol = get_object_or_404(Rol, pk=pk)
+    
+    # Advertencia si el rol tiene usuarios asignados
+    usuarios_asignados = Usuario.objects.filter(rol=rol).count()
+    
+    if request.method == 'POST':
+        form = RolForm(request.POST, instance=rol)
+        if form.is_valid():
+            rol = form.save()
+            
+            # Registrar en auditoría
+            cambios = ', '.join(form.changed_data) if form.changed_data else 'sin cambios'
+            LogAuditoria.registrar(
+                usuario=request.user,
+                accion='MODIFICAR_ROL',
+                tabla_afectada='Rol',
+                registro_id=rol.id,
+                detalles=f"Rol modificado: {rol.nombre} - Campos: {cambios} - Usuarios afectados: {usuarios_asignados}",
+                ip=get_client_ip(request)
+            )
+            
+            messages.success(request, f'Rol "{rol.nombre}" actualizado exitosamente.')
+            if usuarios_asignados > 0:
+                messages.warning(
+                    request, 
+                    f'Los cambios afectarán a {usuarios_asignados} usuario(s) con este rol.'
+                )
+            return redirect('accounts:rol_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f'{form.fields.get(field, {}).label or field}: {error}')
+    else:
+        form = RolForm(instance=rol)
+    
+    context = {
+        'form': form,
+        'title': 'Editar Rol',
+        'rol': rol,
+        'is_new': False,
+        'usuarios_asignados': usuarios_asignados
+    }
+    return render(request, 'accounts/rol_form.html', context)
 
 @login_required
 def gestion_usuarios(request):

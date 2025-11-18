@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Gestión de Roles{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auditoria.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-purple);">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Gestión de Roles RBAC
+                </h2>
+                <p style="color: var(--gray-600); font-size: 14px;">
+                    Control de permisos granulares según Role-Based Access Control
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a href="{% url 'accounts:gestion_usuarios' %}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Volver a Usuarios
+                </a>
+                <a href="{% url 'accounts:rol_create' %}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <line x1="12" y1="9" x2="12" y2="15"/>
+                        <line x1="9" y1="12" x2="15" y2="12"/>
+                    </svg>
+                    Nuevo Rol
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadística de roles -->
+    <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-content">
+                <h3>Total de Roles</h3>
+                <p>{{ total_roles }}</p>
+                <span style="font-size: 13px; color: var(--gray-500);">En el sistema</span>
+            </div>
+            <div class="stat-icon purple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de roles -->
+    <div class="card">
+        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-purple);">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Roles del Sistema
+        </h3>
+
+        {% if roles %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre del Rol</th>
+                        <th>Descripción</th>
+                        <th>Usuarios Asignados</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rol in roles %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--primary-purple);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            {{ rol.nombre }}
+                        </td>
+                        <td style="max-width: 400px; color: var(--gray-700); font-size: 13px;">
+                            {{ rol.descripcion|truncatewords:20 }}
+                        </td>
+                        <td>
+                            <span class="badge {% if rol.total_usuarios > 0 %}badge-blue{% else %}badge-gray{% endif %}">
+                                {{ rol.total_usuarios }} usuario{{ rol.total_usuarios|pluralize }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{% url 'accounts:rol_update' rol.pk %}" 
+                                   class="btn-icon" 
+                                   style="background: #8b5cf6; color: white;"
+                                   title="Editar rol">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: var(--gray-500);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.3;">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <p style="font-size: 16px; font-weight: 500;">No hay roles registrados en el sistema</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Información de seguridad -->
+    <div class="card" style="margin-top: 24px; background: #dbeafe; border-left: 4px solid var(--primary-blue);">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <div>
+                <p style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                    Principios RBAC del Sistema
+                </p>
+                <ul style="font-size: 14px; color: #1e40af; list-style: disc; margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Segregación de Funciones:</strong> Cada rol tiene permisos específicos sin superposición innecesaria</li>
+                    <li><strong>Principio del Menor Privilegio:</strong> Los usuarios solo acceden a lo estrictamente necesario</li>
+                    <li><strong>Segmentación de Datos:</strong> Admin Sistema no ve datos clínicos, Administrativo no ve datos médicos</li>
+                    <li><strong>Trazabilidad Total:</strong> Todos los cambios en roles quedan registrados en auditoría</li>
+                    <li><strong>Cumplimiento Normativo:</strong> Diseñado según Ley 20.584 y estándares de seguridad hospitalaria</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,20 +1,18 @@
 """
 Vistas de Reportes
-Generación de REM BS22 y exportación a Excel
+Generación de REM en PDF y exportación a Excel
 """
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponse
 from datetime import datetime
 from core.models import Parto, RecienNacido, Madre
 from auditoria.models import LogAuditoria
 import csv
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from utils.pdf_utils import render_to_pdf
 from accounts.views import get_client_ip
+
 
 @login_required
 def reporte_menu(request):
@@ -30,7 +28,7 @@ def reporte_menu(request):
 
 @login_required
 def generar_rem_bs22(request):
-    """Genera REM BS22 - SOLO Médicos y Supervisores"""
+    """Genera REM en PDF - SOLO Médicos y Supervisores"""
     if not request.user.puede_generar_reportes_rem:
         messages.error(request, 'No tiene permisos para generar reportes REM.')
         return redirect('core:dashboard')
@@ -43,17 +41,42 @@ def generar_rem_bs22(request):
             messages.error(request, 'Debe seleccionar ambas fechas')
             return render(request, 'reportes/rem_bs22_form.html')
         
-        # ... resto de la lógica ...
+        try:
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido')
+            return render(request, 'reportes/rem_bs22_form.html')
         
-        # Registrar generación
+        # Filtrar partos en el rango de fechas
+        partos = Parto.objects.filter(
+            fecha_parto__gte=fecha_inicio_dt,
+            fecha_parto__lte=fecha_fin_dt
+        ).select_related('madre', 'usuario_registro').prefetch_related('recien_nacidos', 'indicaciones')
+        
+        if not partos.exists():
+            messages.warning(request, 'No se encontraron partos en el rango de fechas seleccionado')
+            return render(request, 'reportes/rem_bs22_form.html')
+        
+        # Generar PDF
+        from utils.pdf_rem import generar_rem_pdf
+        
+        pdf = generar_rem_pdf(partos, fecha_inicio_dt, fecha_fin_dt, request.user)
+        
+        # Registrar generación en auditoría
         LogAuditoria.registrar(
             usuario=request.user,
-            accion='GENERAR_REPORTE_REM_BS22',
-            detalles=f'Periodo: {fecha_inicio} a {fecha_fin}',
+            accion='GENERAR_REPORTE_REM_BS22_PDF',
+            detalles=f'Periodo: {fecha_inicio} a {fecha_fin} - Total partos: {partos.count()}',
             ip=get_client_ip(request)
         )
         
-        # ... continuar
+        # Crear respuesta HTTP
+        response = HttpResponse(pdf, content_type='application/pdf')
+        nombre_archivo = f'REM_BS22_{fecha_inicio_dt.strftime("%Y%m%d")}_{fecha_fin_dt.strftime("%Y%m%d")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+        
+        return response
     
     return render(request, 'reportes/rem_bs22_form.html')
 
@@ -179,21 +202,21 @@ def exportar_excel(request):
             return render(request, 'reportes/exportar_form.html')
         
         try:
-            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
         except ValueError:
             messages.error(request, 'Formato de fecha inválido')
             return render(request, 'reportes/exportar_form.html')
         
         # Filtrar partos
         partos = Parto.objects.filter(
-            fecha_parto__gte=fecha_inicio,
-            fecha_parto__lte=fecha_fin
+            fecha_parto__gte=fecha_inicio_dt,
+            fecha_parto__lte=fecha_fin_dt
         ).select_related('madre').prefetch_related('recien_nacidos')
         
         # Crear respuesta CSV
         response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-        response['Content-Disposition'] = f'attachment; filename="partos_{fecha_inicio.strftime("%Y%m%d")}_{fecha_fin.strftime("%Y%m%d")}.csv"'
+        response['Content-Disposition'] = f'attachment; filename="partos_{fecha_inicio_dt.strftime("%Y%m%d")}_{fecha_fin_dt.strftime("%Y%m%d")}.csv"'
         
         # Escribir BOM para Excel UTF-8
         response.write('\ufeff')
@@ -221,7 +244,7 @@ def exportar_excel(request):
             for rn in parto.recien_nacidos.all():
                 writer.writerow([
                     parto.fecha_parto.strftime('%d/%m/%Y %H:%M'),
-                    parto.madre.ficha_clinica_id or '',
+                    parto.madre.ficha_clinica_numero or '',
                     parto.edad_gestacional or '',
                     parto.tipo_parto,
                     parto.anestesia or '',
@@ -238,18 +261,22 @@ def exportar_excel(request):
         LogAuditoria.registrar(
             usuario=request.user,
             accion='EXPORTAR_EXCEL',
-            detalles=f'Exportados {partos.count()} partos del periodo {fecha_inicio.date()} a {fecha_fin.date()}'
+            detalles=f'Exportados {partos.count()} partos del periodo {fecha_inicio_dt.date()} a {fecha_fin_dt.date()}',
+            ip=get_client_ip(request)
         )
         
         return response
     
     return render(request, 'reportes/exportar_form.html')
 
+
 @login_required
 def generar_brazalete_pdf(request, pk):
     """
     Vista para generar brazalete PDF usando ReportLab
     """
+    from django.shortcuts import get_object_or_404
+    
     parto = get_object_or_404(Parto, pk=pk)
     madre = parto.madre
     rn = parto.recien_nacidos.first()

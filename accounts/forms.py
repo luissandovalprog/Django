@@ -293,3 +293,109 @@ class CustomUsuarioChangeForm(forms.ModelForm):
             user.save()
         
         return user
+
+class RolForm(forms.ModelForm):
+    """
+    Formulario para crear/editar Roles con permisos RBAC granulares
+    """
+    
+    class Meta:
+        model = Rol
+        fields = [
+            'nombre',
+            'descripcion',
+            # Permisos de Admisiones
+            'puede_crear_admision_madre',
+            'puede_editar_admision_madre',
+            # Permisos de Dashboard
+            'puede_ver_lista_administrativa_madres',
+            'puede_ver_dashboard_clinico',
+            # Permisos de Partos
+            'puede_crear_parto',
+            'puede_editar_parto',
+            'puede_ver_todos_partos',
+            # Permisos de Partogramas y Epicrisis
+            'puede_crear_editar_partograma',
+            'puede_crear_editar_epicrisis',
+            # Permisos de Reportes y Gestión
+            'puede_generar_reportes_rem',
+            'puede_ver_auditoria',
+            'puede_gestionar_usuarios',
+            'puede_eliminar_registros',
+            'puede_anexar_correccion',
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Ej: Matrona Clínica'
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'rows': 3,
+                'placeholder': 'Descripción del rol y sus responsabilidades'
+            }),
+        }
+        labels = {
+            'nombre': 'Nombre del Rol',
+            'descripcion': 'Descripción',
+            # Admisiones
+            'puede_crear_admision_madre': 'Crear Admisiones de Madres',
+            'puede_editar_admision_madre': 'Editar Admisiones de Madres',
+            # Dashboard
+            'puede_ver_lista_administrativa_madres': 'Ver Lista Administrativa (solo datos demográficos)',
+            'puede_ver_dashboard_clinico': 'Ver Dashboard Clínico',
+            # Partos
+            'puede_crear_parto': 'Crear Registros de Parto',
+            'puede_editar_parto': 'Editar Registros de Parto',
+            'puede_ver_todos_partos': 'Ver Todos los Partos (sin restricción de turno)',
+            # Partogramas y Epicrisis
+            'puede_crear_editar_partograma': 'Crear/Editar Partogramas',
+            'puede_crear_editar_epicrisis': 'Crear/Editar Epicrisis',
+            # Reportes y Gestión
+            'puede_generar_reportes_rem': 'Generar Reportes REM',
+            'puede_ver_auditoria': 'Acceder a Auditoría',
+            'puede_gestionar_usuarios': 'Gestionar Usuarios',
+            'puede_eliminar_registros': 'Eliminar Registros',
+            'puede_anexar_correccion': 'Anexar Correcciones',
+        }
+    
+    def clean_nombre(self):
+        """Validar que el nombre del rol no esté duplicado"""
+        nombre = self.cleaned_data.get('nombre')
+        
+        # Excluir el rol actual en caso de edición
+        if self.instance and self.instance.pk:
+            if Rol.objects.filter(nombre=nombre).exclude(pk=self.instance.pk).exists():
+                raise ValidationError('Ya existe un rol con este nombre')
+        else:
+            if Rol.objects.filter(nombre=nombre).exists():
+                raise ValidationError('Ya existe un rol con este nombre')
+        
+        return nombre
+    
+    def clean(self):
+        """Validaciones cruzadas de permisos"""
+        cleaned_data = super().clean()
+        
+        # Validación 1: Si puede editar parto, debe poder crear parto
+        if cleaned_data.get('puede_editar_parto') and not cleaned_data.get('puede_crear_parto'):
+            raise ValidationError({
+                'puede_editar_parto': 'Para editar partos, primero debe poder crearlos'
+            })
+        
+        # Validación 2: Admin Sistema no debe tener acceso clínico
+        nombre = cleaned_data.get('nombre', '')
+        if 'admin sistema' in nombre.lower():
+            if cleaned_data.get('puede_ver_dashboard_clinico') or cleaned_data.get('puede_ver_lista_administrativa_madres'):
+                raise ValidationError(
+                    'El rol "Admin Sistema" NO debe tener acceso a datos de pacientes (principio de segmentación)'
+                )
+        
+        # Validación 3: Administrativo no debe ver dashboard clínico
+        if 'administrativo' in nombre.lower():
+            if cleaned_data.get('puede_ver_dashboard_clinico'):
+                raise ValidationError({
+                    'puede_ver_dashboard_clinico': 'El rol Administrativo NO debe ver datos clínicos'
+                })
+        
+        return cleaned_data

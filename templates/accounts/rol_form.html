@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 1000px; margin: 0 auto;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--gray-900); margin: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: var(--primary-purple);">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    {% if not is_new %}
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" style="stroke-width: 1.5;"/>
+                    {% endif %}
+                </svg>
+                {{ title }}
+            </h2>
+        </div>
+
+        {% if not is_new and usuarios_asignados > 0 %}
+        <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
+            <p style="font-size: 14px; color: #92400e; margin: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <strong>Atención:</strong> Este rol tiene {{ usuarios_asignados }} usuario{{ usuarios_asignados|pluralize }} asignado{{ usuarios_asignados|pluralize }}. Los cambios afectarán sus permisos inmediatamente.
+            </p>
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Información Básica -->
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--gray-200);">
+                <h3 style="font-size: 18px; font-weight: 600; color: var(--gray-900); margin-bottom: 16px;">
+                    Información Básica del Rol
+                </h3>
+
+                <div class="form-group">
+                    <label for="{{ form.nombre.id_for_label }}" class="form-label required">
+                        {{ form.nombre.label }}
+                    </label>
+                    {{ form.nombre }}
+                    <p class="form-hint">Nombre descriptivo del rol (ej: "Matrona Clínica", "Médico Jefe")</p>
+                    {% if form.nombre.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.nombre.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                        {{ form.descripcion.label }}
+                    </label>
+                    {{ form.descripcion }}
+                    <p class="form-hint">Descripción detallada de las responsabilidades del rol</p>
+                    {% if form.descripcion.errors %}
+                        <p style="color: var(--primary-red); font-size: 13px; margin-top: 4px;">
+                            {{ form.descripcion.errors|join:", " }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Permisos Clínicos -->
+            <div style="background: #dbeafe; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #3b82f6;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #1e40af; margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: #3b82f6;">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    Permisos Clínicos
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <!-- Admisiones -->
+                    <div class="form-checkbox">
+                        {{ form.puede_crear_admision_madre }}
+                        <label for="{{ form.puede_crear_admision_madre.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_crear_admision_madre.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_editar_admision_madre }}
+                        <label for="{{ form.puede_editar_admision_madre.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_editar_admision_madre.label }}
+                        </label>
+                    </div>
+
+                    <!-- Partos -->
+                    <div class="form-checkbox">
+                        {{ form.puede_crear_parto }}
+                        <label for="{{ form.puede_crear_parto.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_crear_parto.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_editar_parto }}
+                        <label for="{{ form.puede_editar_parto.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_editar_parto.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_ver_todos_partos }}
+                        <label for="{{ form.puede_ver_todos_partos.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_ver_todos_partos.label }}
+                        </label>
+                    </div>
+
+                    <!-- Partogramas y Epicrisis -->
+                    <div class="form-checkbox">
+                        {{ form.puede_crear_editar_partograma }}
+                        <label for="{{ form.puede_crear_editar_partograma.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_crear_editar_partograma.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_crear_editar_epicrisis }}
+                        <label for="{{ form.puede_crear_editar_epicrisis.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_crear_editar_epicrisis.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_anexar_correccion }}
+                        <label for="{{ form.puede_anexar_correccion.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_anexar_correccion.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permisos de Visualización -->
+            <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #10b981;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #065f46; margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: #10b981;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Permisos de Visualización
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <div class="form-checkbox">
+                        {{ form.puede_ver_dashboard_clinico }}
+                        <label for="{{ form.puede_ver_dashboard_clinico.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_ver_dashboard_clinico.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_ver_lista_administrativa_madres }}
+                        <label for="{{ form.puede_ver_lista_administrativa_madres.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_ver_lista_administrativa_madres.label }}
+                        </label>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid #10b981;">
+                    <p style="font-size: 13px; color: #065f46; margin: 0;">
+                        <strong>Nota:</strong> El dashboard clínico muestra datos médicos sensibles. El dashboard administrativo solo muestra información demográfica.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Permisos Administrativos -->
+            <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #f59e0b;">
+                <h3 style="font-size: 18px; font-weight: 600; color: #92400e; margin-bottom: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; color: #f59e0b;">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Permisos Administrativos y de Gestión
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <div class="form-checkbox">
+                        {{ form.puede_gestionar_usuarios }}
+                        <label for="{{ form.puede_gestionar_usuarios.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_gestionar_usuarios.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_ver_auditoria }}
+                        <label for="{{ form.puede_ver_auditoria.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_ver_auditoria.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_generar_reportes_rem }}
+                        <label for="{{ form.puede_generar_reportes_rem.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_generar_reportes_rem.label }}
+                        </label>
+                    </div>
+                    <div class="form-checkbox">
+                        {{ form.puede_eliminar_registros }}
+                        <label for="{{ form.puede_eliminar_registros.id_for_label }}" style="font-weight: normal; cursor: pointer; margin-left: 8px;">
+                            {{ form.puede_eliminar_registros.label }}
+                        </label>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid #f59e0b;">
+                    <p style="font-size: 13px; color: #92400e; margin: 0;">
+                        <strong>Advertencia:</strong> Los permisos administrativos deben asignarse con cuidado. El permiso de eliminación es irreversible.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Información de Seguridad RBAC -->
+            <div style="background: #e0e7ff; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #6366f1;">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1; flex-shrink: 0;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <div>
+                        <p style="font-weight: 600; color: #4338ca; margin-bottom: 8px;">
+                            Principios de Seguridad RBAC
+                        </p>
+                        <ul style="font-size: 14px; color: #4338ca; list-style: disc; margin-left: 20px; line-height: 1.6;">
+                            <li><strong>Menor Privilegio:</strong> Asigna solo los permisos estrictamente necesarios</li>
+                            <li><strong>Segregación:</strong> Admin Sistema no debe ver datos clínicos, Administrativo no debe ver información médica</li>
+                            <li><strong>Trazabilidad:</strong> Todos los cambios quedan registrados en auditoría</li>
+                            <li><strong>Validación:</strong> El sistema valida automáticamente incompatibilidades de permisos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="btn-group">
+                <a href="{% url 'accounts:rol_list' %}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    {% if is_new %}Crear Rol{% else %}Guardar Cambios{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de dependencias de permisos
+    const puedeEditarParto = document.getElementById('{{ form.puede_editar_parto.id_for_label }}');
+    const puedeCrearParto = document.getElementById('{{ form.puede_crear_parto.id_for_label }}');
+    
+    if (puedeEditarParto && puedeCrearParto) {
+        puedeEditarParto.addEventListener('change', function() {
+            if (this.checked && !puedeCrearParto.checked) {
+                alert('Para editar partos, primero debe poder crearlos. Se activará automáticamente "Crear Registros de Parto".');
+                puedeCrearParto.checked = true;
+            }
+        });
+    }
+
+    // Validación de Admin Sistema (no debe tener acceso clínico)
+    const nombreInput = document.getElementById('{{ form.nombre.id_for_label }}');
+    const dashboardClinico = document.getElementById('{{ form.puede_ver_dashboard_clinico.id_for_label }}');
+    const dashboardAdmin = document.getElementById('{{ form.puede_ver_lista_administrativa_madres.id_for_label }}');
+    
+    if (nombreInput && dashboardClinico && dashboardAdmin) {
+        function validarAdminSistema() {
+            const nombre = nombreInput.value.toLowerCase();
+            if (nombre.includes('admin sistema')) {
+                if (dashboardClinico.checked || dashboardAdmin.checked) {
+                    alert('ADVERTENCIA: El rol "Admin Sistema" NO debe tener acceso a datos de pacientes según el principio de segmentación RBAC.');
+                    dashboardClinico.checked = false;
+                    dashboardAdmin.checked = false;
+                }
+            }
+        }
+        
+        nombreInput.addEventListener('blur', validarAdminSistema);
+        dashboardClinico.addEventListener('change', validarAdminSistema);
+        dashboardAdmin.addEventListener('change', validarAdminSistema);
+    }
+
+    // Validación de Administrativo (no debe ver dashboard clínico)
+    if (nombreInput && dashboardClinico) {
+        function validarAdministrativo() {
+            const nombre = nombreInput.value.toLowerCase();
+            if (nombre.includes('administrativo')) {
+                if (dashboardClinico.checked) {
+                    alert('ADVERTENCIA: El rol Administrativo NO debe ver el dashboard clínico según el principio de segmentación.');
+                    dashboardClinico.checked = false;
+                }
+            }
+        }
+        
+        nombreInput.addEventListener('blur', validarAdministrativo);
+        dashboardClinico.addEventListener('change', validarAdministrativo);
+    }
+
+    // Prevenir envío duplicado del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        let isSubmitting = false;
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            
+            isSubmitting = true;
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Guardando...';
+            
+            // Re-habilitar después de 3 segundos por si hay error de validación
+            setTimeout(() => {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '{% if is_new %}Crear Rol{% else %}Guardar Cambios{% endif %}';
+            }, 3000);
+        });
+    }
+
+    // Contador de permisos seleccionados
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const contadorDiv = document.createElement('div');
+    contadorDiv.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: var(--primary-purple); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 600; z-index: 1000;';
+    contadorDiv.innerHTML = '<span id="permisos-count">0</span> permisos seleccionados';
+    document.body.appendChild(contadorDiv);
+    
+    function actualizarContador() {
+        const count = Array.from(checkboxes).filter(cb => cb.checked).length;
+        document.getElementById('permisos-count').textContent = count;
+    }
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', actualizarContador);
+    });
+    
+    actualizarContador();
+});
+</script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.form-checkbox:hover {
+    background: #f9fafb;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-purple);
+}
+
+.form-checkbox label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--gray-700);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}
+{% endblock %}
