@@ -155,7 +155,10 @@ def madre_create(request):
     if request.method == 'POST':
         form = MadreForm(request.POST)
         if form.is_valid():
-            madre = form.save()
+            madre = form.save(commit=False)
+            # NUEVO: Asignar el usuario que está registrando
+            madre.usuario_registro = request.user
+            madre.save()
             
             LogAuditoria.registrar(
                 usuario=request.user,

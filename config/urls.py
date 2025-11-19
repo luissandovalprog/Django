@@ -27,6 +27,7 @@ urlpatterns = [
     path('reportes/', include('reportes.urls')),
     path('sistema/', include('core.urls')),
     path('auditoria/', include('auditoria.urls')),
+    path('notifications/', include('notifications.urls')),
     
     # Redirect root to login
     path('', RedirectView.as_view(url='/accounts/login/', permanent=False)),

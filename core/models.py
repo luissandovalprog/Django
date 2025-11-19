@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 class Madre(models.Model):
     """
     Modelo de Madre con datos sensibles cifrados
-    NUEVO: Campo direccion agregado
+    ACTUALIZADO: Campo usuario_registro agregado
     """
     PREVISION_CHOICES = [
         ('FONASA', 'FONASA'),
@@ -34,9 +34,10 @@ class Madre(models.Model):
         blank=True,
         verbose_name="Número de Ficha Clínica"
     )
-    # NUEVO: Campo para dirección
+    # Campo para dirección
     direccion = models.TextField(null=True, blank=True, verbose_name="Dirección de Residencia")
-    # CORREGIDO: ficha_clinica_id ahora es para ID, no dirección
+    
+    # Campo legado
     ficha_clinica_id = models.CharField(
         max_length=255, 
         unique=True, 
@@ -60,6 +61,16 @@ class Madre(models.Model):
     prevision = models.CharField(max_length=50, choices=PREVISION_CHOICES, null=True, blank=True)
     antecedentes_medicos = models.TextField(null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
+    
+    # NUEVO: Usuario que registró la admisión
+    usuario_registro = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='madres_registradas',
+        null=True,  # Permitir nulos para registros existentes
+        blank=True,
+        verbose_name='Usuario que Registró'
+    )
     
     class Meta:
         db_table = 'Madre'
