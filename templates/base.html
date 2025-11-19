@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Gestión{% endblock %} - SIGN</title>
@@ -14,7 +15,7 @@
     <!-- Overlay para cerrar dropdown -->
     <div id="notifications-overlay" class="notifications-overlay"></div>
     
-    <nav class="navbar">
+    <nav class="navbar" style="z-index: 1000;">
         <div class="navbar-container">
             <div class="navbar-left">
                 <div class="navbar-brand">
@@ -97,7 +98,7 @@
                     <div id="notifications-dropdown" class="notifications-dropdown">
                         <div class="notifications-header">
                             <h3>Notificaciones</h3>
-                            <button id="btn-mark-all-read" class="btn-mark-all-read">
+                            <button id="btn-mark-all-read" class="btn-mark-all-read" type="button">
                                 Marcar todas como leídas
                             </button>
                         </div>

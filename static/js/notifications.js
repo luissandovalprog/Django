@@ -389,19 +389,22 @@ class NotificationSystem {
      * Obtener CSRF Token
      */
     getCSRFToken() {
-        const name = 'csrftoken';
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+        // 1. Intentar leer del meta tag (Solución Segura)
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            return meta.content;
         }
-        return cookieValue;
+
+        // 2. Fallback: Intentar leer de un input de formulario si existe
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (input) {
+            return input.value;
+        }
+        
+        // 3. Fallback antiguo: Cookies (Solo funciona si HTTPOnly=False)
+        const name = 'csrftoken';
+        // ... (puedes dejar tu código antiguo aquí como último recurso)
+        return null;
     }
 }
 
