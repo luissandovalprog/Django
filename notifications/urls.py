@@ -19,4 +19,10 @@ urlpatterns = [
     
     # Endpoint para marcar todas como leídas
     path('api/marcar-todas-leidas/', views.marcar_todas_leidas, name='api_marcar_todas_leidas'),
+    
+    # Endpoint para eliminar notificación
+    path('api/eliminar/', views.eliminar_notificacion, name='api_eliminar'),
+    
+    # Vista de detalle de notificación
+    path('<uuid:pk>/', views.notification_detail, name='notification_detail'),
 ]

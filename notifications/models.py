@@ -58,6 +58,18 @@ class Notificacion(models.Model):
             self.fecha_lectura = timezone.now()
             self.save(update_fields=['leida', 'fecha_lectura'])
     
+    def eliminar_si_leida(self):
+        """
+        Elimina la notificación solo si está marcada como leída
+        
+        Returns:
+            bool: True si se eliminó exitosamente, False si no estaba leída
+        """
+        if self.leida:
+            self.delete()
+            return True
+        return False
+    
     @staticmethod
     def crear_notificacion_correccion(correccion):
         """
@@ -102,10 +114,19 @@ class Notificacion(models.Model):
         # Solo crear notificación si hay un usuario destino
         if usuario_destino:
             titulo = f"Corrección anexada en {nombre_objeto.title()}"
+            
+            # Determinar el valor original para mostrar
+            valor_anterior = correccion.valor_original if correccion.valor_original else "(vacío)"
+            valor_nuevo = correccion.valor_nuevo
+            
+            # Construir mensaje explícito con los valores involucrados
             mensaje = (
-                f"El Dr(a). {correccion.usuario.nombre_completo} ha anexado una corrección "
-                f"al campo '{correccion.campo_corregido}' en {descripcion}. "
-                f"Justificación: {correccion.justificacion[:100]}..."
+                f"El Dr(a). {correccion.usuario.nombre_completo} ha anexado una corrección en {descripcion}.\n\n"
+                f"📋 Campo Afectado: {correccion.campo_corregido}\n\n"
+                f"🔄 Cambio Realizado:\n"
+                f"   • Valor anterior: {valor_anterior}\n"
+                f"   • Nuevo valor: {valor_nuevo}\n\n"
+                f"📝 Justificación: {correccion.justificacion}"
             )
             
             Notificacion.objects.create(

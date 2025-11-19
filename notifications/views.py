@@ -5,7 +5,7 @@ Vistas JSON para el sistema de notificaciones
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from .models import Notificacion
 from django.utils.timesince import timesince
 import json
@@ -216,3 +216,84 @@ def marcar_todas_leidas(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def eliminar_notificacion(request):
+    """
+    Endpoint para eliminar una notificación (solo si está leída)
+    
+    POST body:
+        {
+            "notificacion_id": str
+        }
+    
+    Returns:
+        JSON: {
+            "success": bool,
+            "message": str
+        }
+    """
+    try:
+        data = json.loads(request.body)
+        notificacion_id = data.get('notificacion_id')
+        
+        if not notificacion_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'ID de notificación requerido'
+            }, status=400)
+        
+        # Obtener la notificación
+        notificacion = get_object_or_404(
+            Notificacion,
+            id=notificacion_id,
+            receptor=request.user
+        )
+        
+        # Intentar eliminar (solo si está leída)
+        if notificacion.eliminar_si_leida():
+            return JsonResponse({
+                'success': True,
+                'message': 'Notificación eliminada correctamente'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Solo se pueden eliminar notificaciones leídas'
+            }, status=403)
+    
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'JSON inválido'
+        }, status=400)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def notification_detail(request, pk):
+    """
+    Vista de detalle de una notificación.
+    Muestra el contenido completo de la notificación.
+    """
+    # Obtener la notificación asegurando que sea del usuario actual
+    notificacion = get_object_or_404(Notificacion, pk=pk, receptor=request.user)
+
+    # Marcar como leída si no lo está
+    if not notificacion.leida:
+        notificacion.marcar_como_leida()
+    
+    # Calcular tiempo relativo
+    tiempo_relativo = timesince(notificacion.fecha_creacion) + ' atrás'
+
+    # Renderizar template de detalle
+    return render(request, 'notifications/notification_detail.html', {
+        'notificacion': notificacion,
+        'tiempo_relativo': tiempo_relativo,
+    })
