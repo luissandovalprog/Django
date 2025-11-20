@@ -336,6 +336,11 @@ def recien_nacido_create(request, parto_pk):
             recien_nacido = form.save(commit=False)
             recien_nacido.parto = parto
             recien_nacido.usuario_registro = request.user
+            
+            # Generar RUT provisorio si no existe
+            if not recien_nacido.rut_provisorio:
+                recien_nacido.rut_provisorio = RecienNacidoForm.generar_rut_provisorio(parto)
+            
             recien_nacido.save()
             
             # Registrar en auditoría
@@ -344,7 +349,7 @@ def recien_nacido_create(request, parto_pk):
                 accion='CREATE_RECIEN_NACIDO',
                 tabla_afectada='RecienNacido',
                 registro_id=recien_nacido.id,
-                detalles=f'RN registrado - Parto: {parto.id}, Peso: {recien_nacido.peso_gramos}g, APGAR: {recien_nacido.apgar_1_min}/{recien_nacido.apgar_5_min}',
+                detalles=f'RN registrado - Parto: {parto.id}, Peso: {recien_nacido.peso_gramos}g, APGAR: {recien_nacido.apgar_1_min}/{recien_nacido.apgar_5_min}, RUT Provisorio: {recien_nacido.rut_provisorio}',
                 ip=get_client_ip(request)
             )
             
@@ -355,6 +360,7 @@ def recien_nacido_create(request, parto_pk):
                 for error in errors:
                     messages.error(request, f'{field}: {error}')
     else:
+        # IMPORTANTE: Pasar el parto en initial para generar el RUT provisorio
         form = RecienNacidoForm(user=request.user, initial={'parto': parto})
         # Hacer que el campo parto esté deshabilitado
         form.fields['parto'].widget.attrs['disabled'] = True
@@ -672,8 +678,8 @@ def registrar_parto_completo(request, madre_pk):
             rn_data = request.POST.copy()
             rn_data['parto'] = str(parto.pk)
             
-            # Paso 3: Crear formulario del RN
-            rn_form = RecienNacidoForm(rn_data, user=request.user)
+            # Paso 3: Crear formulario del RN con el parto en initial
+            rn_form = RecienNacidoForm(rn_data, user=request.user, initial={'parto': parto})
             
             if rn_form.is_valid():
                 # Paso 4: Guardar RN
@@ -684,6 +690,10 @@ def registrar_parto_completo(request, madre_pk):
                 if not hasattr(recien_nacido, 'usuario_registro') or recien_nacido.usuario_registro is None:
                     recien_nacido.usuario_registro = request.user
                 
+                # Generar RUT provisorio si no existe
+                if not recien_nacido.rut_provisorio:
+                    recien_nacido.rut_provisorio = RecienNacidoForm.generar_rut_provisorio(parto)
+                
                 try:
                     recien_nacido.save()
                     
@@ -693,7 +703,7 @@ def registrar_parto_completo(request, madre_pk):
                         accion='CREATE_PARTO_COMPLETO',
                         tabla_afectada='Parto',
                         registro_id=parto.id,
-                        detalles=f'Parto y RN registrados para {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Peso RN: {recien_nacido.peso_gramos}g',
+                        detalles=f'Parto y RN registrados para {madre.get_nombre()} - Tipo: {parto.tipo_parto}, Peso RN: {recien_nacido.peso_gramos}g, RUT Provisorio: {recien_nacido.rut_provisorio}',
                         ip=get_client_ip(request)
                     )
                     

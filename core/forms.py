@@ -51,8 +51,8 @@ class MadreForm(forms.ModelForm):
     class Meta:
         model = Madre
         fields = [
-            'ficha_clinica_numero',  # AHORA es para el ID de ficha
-            'direccion',         # NUEVO: Campo para dirección
+            'ficha_clinica_numero',
+            'direccion',
             'fecha_nacimiento',
             'nacionalidad',
             'pertenece_pueblo_originario',
@@ -62,7 +62,9 @@ class MadreForm(forms.ModelForm):
         widgets = {
             'ficha_clinica_numero': forms.TextInput(attrs={
                 'class': 'form-control', 
-                'placeholder': 'Ej: FC-2025-001'
+                'placeholder': 'Ej: FC-2025-001',
+                'readonly': True,
+                'style': 'background-color: #f3f4f6; cursor: not-allowed;'
             }),
             'direccion': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -106,12 +108,49 @@ class MadreForm(forms.ModelForm):
             initial['nombre'] = instance.get_nombre() or ''
             initial['telefono'] = instance.get_telefono() or ''
             kwargs['initial'] = initial
+        else:
+            # Si estamos creando, generar ficha automática
+            initial = kwargs.get('initial', {})
+            initial['ficha_clinica_numero'] = self.generar_numero_ficha()
+            kwargs['initial'] = initial
+        
         super().__init__(*args, **kwargs)
+        
+        # Hacer el campo readonly siempre
+        self.fields['ficha_clinica_numero'].disabled = True
+    
+    @staticmethod
+    def generar_numero_ficha():
+        """
+        Genera el siguiente número de ficha en formato FC-YYYY-NNN
+        Ejemplo: FC-2025-001, FC-2025-002, etc.
+        """
+        from datetime import datetime
+        
+        año_actual = datetime.now().year
+        
+        # Buscar la última ficha del año actual
+        ultima_madre = Madre.objects.filter(
+            ficha_clinica_numero__startswith=f'FC-{año_actual}-'
+        ).order_by('-ficha_clinica_numero').first()
+        
+        if ultima_madre and ultima_madre.ficha_clinica_numero:
+            # Extraer el número de la última ficha
+            try:
+                ultimo_numero = int(ultima_madre.ficha_clinica_numero.split('-')[-1])
+                siguiente_numero = ultimo_numero + 1
+            except (ValueError, IndexError):
+                siguiente_numero = 1
+        else:
+            # Primera ficha del año
+            siguiente_numero = 1
+        
+        # Formatear con ceros a la izquierda (3 dígitos)
+        return f'FC-{año_actual}-{siguiente_numero:03d}'
     
     def clean_rut(self):
         """Validar formato de RUT chileno"""
         rut = self.cleaned_data.get('rut', '')
-        # Puedes agregar validación de RUT aquí
         return rut
     
     def clean_fecha_nacimiento(self):
@@ -121,7 +160,6 @@ class MadreForm(forms.ModelForm):
             from datetime import date
             if fecha > date.today():
                 raise ValidationError('La fecha de nacimiento no puede ser futura')
-            # Calcular edad
             edad = (date.today() - fecha).days // 365
             if edad < 12 or edad > 60:
                 raise ValidationError('La edad debe estar entre 12 y 60 años')
@@ -220,7 +258,12 @@ class RecienNacidoForm(forms.ModelForm):
         ]
         widgets = {
             'parto': forms.Select(attrs={'class': 'form-control'}),
-            'rut_provisorio': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT provisorio'}),
+            'rut_provisorio': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'RUT provisorio',
+                'readonly': True,
+                'style': 'background-color: #f3f4f6; cursor: not-allowed;'
+            }),
             'estado_al_nacer': forms.Select(attrs={'class': 'form-control'}),
             'sexo': forms.Select(attrs={'class': 'form-control'}),
             'peso_gramos': forms.NumberInput(attrs={'class': 'form-control', 'min': '500', 'max': '6000', 'placeholder': 'Peso en gramos'}),
@@ -246,7 +289,62 @@ class RecienNacidoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # CRÍTICO: Extraer el usuario del constructor
         self.user = kwargs.pop('user', None)
+        
+        # Obtener el parto si se pasa en initial
+        parto = kwargs.get('initial', {}).get('parto')
+        
         super().__init__(*args, **kwargs)
+        
+        # Si estamos creando (no editando) y tenemos un parto, generar RUT provisorio
+        if not self.instance.pk and parto:
+            self.fields['rut_provisorio'].initial = self.generar_rut_provisorio(parto)
+        
+        # Hacer el campo readonly siempre
+        self.fields['rut_provisorio'].disabled = True
+    
+    @staticmethod
+    def generar_rut_provisorio(parto):
+        """
+        Genera RUT provisorio basado en el RUT de la madre + correlativo del hijo
+        
+        Formato: RUT_MADRE_SIN_DV + NUMERO_HIJO
+        Ejemplo:
+        - Madre: 12.345.678-9
+        - Hijo 1: 12.345.678-1
+        - Hijo 2: 12.345.678-2
+        """
+        if not parto or not parto.madre:
+            return ''
+        
+        # Obtener el RUT de la madre (descifrado)
+        rut_madre = parto.madre.get_rut()
+        
+        if not rut_madre:
+            return ''
+        
+        # Limpiar el RUT (quitar puntos y guión)
+        rut_limpio = rut_madre.replace('.', '').replace('-', '')
+        
+        # Extraer solo los números (sin el DV)
+        if len(rut_limpio) > 1:
+            rut_sin_dv = rut_limpio[:-1]
+        else:
+            return ''
+        
+        # Contar cuántos hijos ya tiene este parto
+        cantidad_hijos = parto.recien_nacidos.count()
+        correlativo_hijo = cantidad_hijos + 1
+        
+        # Formatear el RUT provisorio con puntos y guión
+        # Ejemplo: 12345678 -> 12.345.678
+        rut_formateado = ''
+        for i, digit in enumerate(reversed(rut_sin_dv)):
+            if i > 0 and i % 3 == 0:
+                rut_formateado = '.' + rut_formateado
+            rut_formateado = digit + rut_formateado
+        
+        # Retornar RUT provisorio: RUT_SIN_DV-CORRELATIVO
+        return f'{rut_formateado}-{correlativo_hijo}'
     
     def clean_peso_gramos(self):
         peso = self.cleaned_data.get('peso_gramos')
@@ -278,6 +376,10 @@ class RecienNacidoForm(forms.ModelForm):
         # CRÍTICO: Asignar usuario_registro si no está asignado y tenemos user
         if self.user and not instance.usuario_registro_id:
             instance.usuario_registro = self.user
+        
+        # Si no tiene RUT provisorio, generarlo antes de guardar
+        if not instance.rut_provisorio and instance.parto:
+            instance.rut_provisorio = self.generar_rut_provisorio(instance.parto)
         
         if commit:
             instance.save()
