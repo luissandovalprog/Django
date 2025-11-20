@@ -168,6 +168,54 @@ def dashboard(request):
         })
     
     return render(request, 'core/dashboard.html', context)
+
+
+# ============= VISTA HTMX PARA TABLA DE MADRES =============
+
+@login_required
+def madres_table_htmx(request):
+    """
+    Vista parcial que devuelve solo la tabla de madres para HTMX
+    """
+    if not request.user.puede_ver_lista_administrativa_madres:
+        return HttpResponse("No autorizado", status=403)
+    
+    # Sistema de límite dinámico
+    LIMITE_INICIAL = 5
+    limite_actual = int(request.GET.get('limite_madres', LIMITE_INICIAL))
+    busqueda_query = request.GET.get('busqueda', '')
+    
+    # Obtener madres con límite y búsqueda
+    madres_qs = Madre.objects.all().order_by('-fecha_registro')
+    
+    if busqueda_query:
+        search_hash = crypto_service.hash_data(busqueda_query)
+        madres_qs = madres_qs.filter(
+            Q(rut_hash=search_hash) |
+            Q(nombre_hash=search_hash) |
+            Q(ficha_clinica_numero__icontains=busqueda_query)
+        )
+    
+    total_madres_admin = madres_qs.count()
+    lista_madres_administrativa = madres_qs[:limite_actual]
+    
+    # Descifrar datos
+    for madre in lista_madres_administrativa:
+        madre.rut_descifrado = madre.get_rut()
+        madre.nombre_descifrado = madre.get_nombre()
+    
+    context = {
+        'lista_madres_administrativa': lista_madres_administrativa,
+        'total_madres_admin': total_madres_admin,
+        'limite_actual': limite_actual,
+        'limite_inicial': LIMITE_INICIAL,
+        'puede_mostrar_mas': limite_actual < total_madres_admin,
+        'busqueda_query': busqueda_query,
+    }
+    
+    return render(request, 'core/partials/madres_table.html', context)
+
+
 
 
 # ============= VISTAS DE MADRE =============

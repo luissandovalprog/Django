@@ -6,8 +6,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Gestión{% endblock %} - SIGN</title>
+    
+
+    <!-- HTMX para interacciones dinámicas sin recarga -->
+
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/htmx.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>

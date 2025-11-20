@@ -47,6 +47,9 @@ urlpatterns = [
     path('parto/<uuid:parto_pk>/partograma/crear/', views.partograma_create, name='partograma_create'),
     path('parto/<uuid:parto_pk>/partograma/editar/', views.partograma_update, name='partograma_update'),
 
+    # HTMX endpoint para tabla de madres
+    path('htmx/madres-table/', views.madres_table_htmx, name='madres_table_htmx'),
+    
     # AJAX endpoint para correcciones
     path('api/obtener-valor-campo/', views.obtener_valor_campo, name='obtener_valor_campo'),
 ]
