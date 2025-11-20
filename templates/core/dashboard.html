@@ -282,7 +282,68 @@
 {% if user.puede_ver_lista_administrativa_madres %}
 <!-- NUEVA CARD PARA ADMINISTRATIVO -->
 <div class="card">
-    <h3 class="card-header">Listado de Madres (Administrativo)</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+
+        <h3 class="card-header" style="margin-bottom: 0;">Listado de Madres (Administrativo)</h3>
+
+        <div style="display: flex; gap: 0.5rem;">
+
+            {% if puede_mostrar_mas %}
+
+            <a href="?limite_madres={{ limite_actual|add:5 }}{% if busqueda_query %}&busqueda={{ busqueda_query }}{% endif %}" 
+
+               class="btn btn-success" 
+
+               style="display: inline-flex; align-items: center; gap: 0.5rem;">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+
+                </svg>
+
+                Mostrar más (+5)
+
+            </a>
+
+            {% endif %}
+
+            
+
+            {% if limite_actual|add:"0" > limite_inicial %}
+
+            <a href="?limite_madres={{ limite_inicial }}{% if busqueda_query %}&busqueda={{ busqueda_query }}{% endif %}" 
+
+               class="btn" 
+
+               style="background: #6b7280; color: white; display: inline-flex; align-items: center; gap: 0.5rem;">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <polyline points="15 18 9 12 15 6"></polyline>
+
+                </svg>
+
+                Ver menos
+
+            </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    
+
+    <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 1rem;">
+
+        Mostrando {{ lista_madres_administrativa|length }} de {{ total_madres_admin }} madres
+
+    </p>
+
     <div class="table-container">
         <table class="table">
             <thead>

@@ -114,9 +114,42 @@ def dashboard(request):
     
     # ===== DASHBOARD ADMINISTRATIVO (Solo Administrativo) =====
     if request.user.puede_ver_lista_administrativa_madres:
-        # Obtener TODAS las madres
-        lista_madres_administrativa = Madre.objects.all().order_by('-fecha_registro')
+        # Sistema de límite dinámico
+
+        LIMITE_INICIAL = 5
+
+        limite_actual = int(request.GET.get('limite_madres', LIMITE_INICIAL))
+
         
+
+        # Obtener madres con límite y búsqueda
+
+        madres_qs = Madre.objects.all().order_by('-fecha_registro')
+
+        
+
+        if busqueda_query:
+
+            search_hash = crypto_service.hash_data(busqueda_query)
+
+            madres_qs = madres_qs.filter(
+
+                Q(rut_hash=search_hash) |
+
+                Q(nombre_hash=search_hash) |
+
+                Q(ficha_clinica_numero__icontains=busqueda_query)
+
+            )
+
+        
+
+        total_madres_admin = madres_qs.count()
+
+        lista_madres_administrativa = madres_qs[:limite_actual]
+
+        
+
         # Descifrar datos
         for madre in lista_madres_administrativa:
             madre.rut_descifrado = madre.get_rut()
@@ -124,6 +157,14 @@ def dashboard(request):
         
         context.update({
             'lista_madres_administrativa': lista_madres_administrativa,
+            'total_madres_admin': total_madres_admin,
+
+            'limite_actual': limite_actual,
+
+            'limite_inicial': LIMITE_INICIAL,
+
+            'puede_mostrar_mas': limite_actual < total_madres_admin,
+
         })
     
     return render(request, 'core/dashboard.html', context)
