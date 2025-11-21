@@ -207,4 +207,66 @@
         </form>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener el RUT de la madre desde el parto
+    const rutMadre = "{{ parto.madre.get_rut }}";
+    
+    // Función para generar RUT provisorio
+    function generarRutProvisorio(rutMadre) {
+        if (!rutMadre) return '';
+        
+        // Limpiar el RUT (quitar puntos y guión)
+        let rutLimpio = rutMadre.replace(/\./g, '').replace(/-/g, '');
+        
+        // Extraer solo los números (sin el DV)
+        if (rutLimpio.length <= 1) return '';
+        
+        let rutSinDv = rutLimpio.slice(0, -1);
+        
+        // Contar cuántos hijos ya tiene este parto
+        const cantidadHijosActual = {{ parto.recien_nacidos.count }};
+        let correlativo = cantidadHijosActual + 1;
+        
+        // Formatear el RUT con puntos
+        let rutFormateado = '';
+        let contador = 0;
+        
+        for (let i = rutSinDv.length - 1; i >= 0; i--) {
+            if (contador > 0 && contador % 3 === 0) {
+                rutFormateado = '.' + rutFormateado;
+            }
+            rutFormateado = rutSinDv[i] + rutFormateado;
+            contador++;
+        }
+        
+        // Retornar RUT provisorio: RUT_SIN_DV-CORRELATIVO
+        return rutFormateado + '-' + correlativo;
+    }
+    
+    // Generar y asignar el RUT provisorio al cargar la página
+    const rutProvisorioInput = document.getElementById('{{ form.rut_provisorio.id_for_label }}');
+    
+    if (rutProvisorioInput && rutMadre && !rutProvisorioInput.value) {
+        const rutProvisorio = generarRutProvisorio(rutMadre);
+        rutProvisorioInput.value = rutProvisorio;
+        
+        console.log('✅ RUT Provisorio generado:', rutProvisorio);
+    }
+    
+    // Establecer "Vivo" como default si no hay valor
+    const estadoVivoRadio = document.getElementById('{{ form.estado_al_nacer.id_for_label }}_vivo');
+    const estadoMuertoRadio = document.getElementById('{{ form.estado_al_nacer.id_for_label }}_muerto');
+    
+    if (estadoVivoRadio && estadoMuertoRadio) {
+        // Solo establecer default si ninguno está marcado
+        if (!estadoVivoRadio.checked && !estadoMuertoRadio.checked) {
+            estadoVivoRadio.checked = true;
+        }
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}
