@@ -1,119 +1,254 @@
 {% extends 'base.html' %}
 
-{% block title %}Detalle Madre{% endblock %}
+{% block title %}Detalle Madre - {{ madre.nombre_descifrado }}{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2>Información de la Madre</h2>
-    </div>
-    <div class="col-md-4 text-end">
-        <a href="{% url 'core:madre_list' %}" class="btn btn-secondary">Volver</a>
-        <a href="{% url 'core:madre_update' madre.pk %}" class="btn btn-warning">Editar</a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5>Datos Personales</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-borderless">
-                    <tr>
-                        <th>Nombre:</th>
-                        <td>{{ madre.nombre_descifrado|default:"---" }}</td>
-                    </tr>
-                    <tr>
-                        <th>RUT:</th>
-                        <td>{{ madre.rut_descifrado|default:"---" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Ficha Clínica:</th>
-                        <td>{{ madre.ficha_clinica_id|default:"---" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Teléfono:</th>
-                        <td>{{ madre.telefono_descifrado|default:"---" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Fecha Nacimiento:</th>
-                        <td>{{ madre.fecha_nacimiento|date:"d/m/Y" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Nacionalidad:</th>
-                        <td>{{ madre.nacionalidad|default:"---" }}</td>
-                    </tr>
-                </table>
-            </div>
+<div style="max-width: 1200px; margin: 0 auto;">
+    <!-- Header con botones de acción -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
+                Información de la Madre
+            </h2>
+            <p style="font-size: 14px; color: var(--gray-600);">
+                Detalles completos del registro de la paciente
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+            {% if user.puede_editar_admision_madre %}
+            <a href="{% url 'core:madre_update' madre.pk %}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Editar
+            </a>
+            {% endif %}
         </div>
     </div>
-    
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5>Información Médica</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-borderless">
-                    <tr>
-                        <th>Previsión:</th>
-                        <td>{{ madre.prevision|default:"---" }}</td>
-                    </tr>
-                    <tr>
-                        <th>Pueblo Originario:</th>
-                        <td>{% if madre.pertenece_pueblo_originario %}Sí{% else %}No{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <th>Antecedentes:</th>
-                        <td>{{ madre.antecedentes_medicos|default:"Sin antecedentes registrados" }}</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
+    <!-- Grid de información -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 24px;">
+        <!-- Datos Personales -->
         <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5>Historial de Partos</h5>
-            </div>
-            <div class="card-body">
-                {% if partos %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Tipo Parto</th>
-                                <th>Anestesia</th>
-                                <th>Edad Gestacional</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for parto in partos %}
-                            <tr>
-                                <td>{{ parto.fecha_parto|date:"d/m/Y H:i" }}</td>
-                                <td>{{ parto.tipo_parto }}</td>
-                                <td>{{ parto.anestesia|default:"---" }}</td>
-                                <td>{{ parto.edad_gestacional|default:"---" }} sem</td>
-                                <td>
-                                    <a href="{% url 'core:parto_detail' parto.pk %}" class="btn btn-sm btn-info">Ver</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200);">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                 </div>
-                {% else %}
-                <p class="text-muted">No hay partos registrados para esta madre</p>
-                {% endif %}
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin: 0;">Datos Personales</h3>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="info-row">
+                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-value">{{ madre.nombre_descifrado|default:"---" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">RUT</span>
+                    <span class="info-value">{{ madre.rut_descifrado|default:"---" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ficha Clínica</span>
+                    <span class="info-value">
+                        <span class="badge badge-blue">{{ madre.ficha_clinica_numero|default:madre.ficha_clinica_id|default:"---" }}</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Teléfono</span>
+                    <span class="info-value">{{ madre.telefono_descifrado|default:"---" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Fecha de Nacimiento</span>
+                    <span class="info-value">{{ madre.fecha_nacimiento|date:"d/m/Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Nacionalidad</span>
+                    <span class="info-value">{{ madre.nacionalidad|default:"---" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Dirección</span>
+                    <span class="info-value">{{ madre.direccion|default:"---" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Médica -->
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200);">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin: 0;">Información Médica</h3>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="info-row">
+                    <span class="info-label">Previsión de Salud</span>
+                    <span class="info-value">
+                        {% if madre.prevision %}
+                            <span class="badge badge-green">{{ madre.prevision }}</span>
+                        {% else %}
+                            ---
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pueblo Originario</span>
+                    <span class="info-value">
+                        {% if madre.pertenece_pueblo_originario %}
+                            <span class="badge badge-purple">Sí</span>
+                        {% else %}
+                            <span class="badge badge-gray">No</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row" style="flex-direction: column; align-items: flex-start;">
+                    <span class="info-label">Antecedentes Médicos</span>
+                    <div style="margin-top: 8px; padding: 12px; background: var(--gray-50); border-radius: 6px; width: 100%; font-size: 14px; color: var(--gray-700); line-height: 1.6;">
+                        {{ madre.antecedentes_medicos|default:"Sin antecedentes registrados"|linebreaks }}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Fecha de Registro</span>
+                    <span class="info-value">{{ madre.fecha_registro|date:"d/m/Y H:i" }}</span>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Historial de Partos -->
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path>
+                        <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin: 0;">Historial de Partos</h3>
+                    <p style="font-size: 13px; color: var(--gray-500); margin: 0;">Total de registros: {{ partos.count }}</p>
+                </div>
+            </div>
+            {% if user.puede_crear_partos %}
+            <a href="{% url 'core:registrar_parto_completo' madre.pk %}" class="btn btn-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Registrar Parto
+            </a>
+            {% endif %}
+        </div>
+
+        {% if partos %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Tipo de Parto</th>
+                        <th>Anestesia</th>
+                        <th>Edad Gestacional</th>
+                        <th>RN</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parto in partos %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-weight: 600; color: var(--gray-900);">{{ parto.fecha_parto|date:"d/m/Y" }}</span>
+                                <span style="font-size: 13px; color: var(--gray-500);">{{ parto.fecha_parto|date:"H:i" }} hrs</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-blue">{{ parto.tipo_parto }}</span>
+                        </td>
+                        <td>{{ parto.anestesia|default:"Sin anestesia" }}</td>
+                        <td>
+                            {% if parto.edad_gestacional %}
+                                <span style="font-weight: 600; color: var(--gray-900);">{{ parto.edad_gestacional }}</span> semanas
+                            {% else %}
+                                ---
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-green">{{ parto.recien_nacidos.count }}</span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'core:parto_detail' parto.pk %}" class="btn-icon blue" title="Ver detalles">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px 20px;">
+            <div style="width: 80px; height: 80px; margin: 0 auto 16px; background: var(--gray-100); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--gray-400);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <p style="font-size: 16px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px;">No hay partos registrados</p>
+            <p style="font-size: 14px; color: var(--gray-500);">Esta madre aún no tiene partos asociados en el sistema</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+<style>
+    .info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: var(--gray-50);
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .info-row:hover {
+        background: var(--gray-100);
+    }
+
+    .info-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-900);
+        text-align: right;
+    }
+</style>
 {% endblock %}

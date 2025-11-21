@@ -140,8 +140,8 @@
                                 {% with parto.fecha_parto|date:"U" as parto_timestamp %}
                                     {% with dias_hospitalizacion=current_timestamp|add:"-"|add:parto_timestamp %}
                                         {% widthratio dias_hospitalizacion 86400 1 as dias %}
-                                        <span class="badge {% if dias <= 3 %}badge-green{% elif dias <= 7 %}badge-yellow{% else %}badge-red{% endif %}">
-                                            {{ dias }} día{{ dias|pluralize }}
+                                        <span class="badge {{ parto.badge_color }}">
+                                            {{ parto.dias_hospitalizacion }} día{{ parto.dias_hospitalizacion|pluralize }}
                                         </span>
                                     {% endwith %}
                                 {% endwith %}

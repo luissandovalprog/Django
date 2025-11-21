@@ -1,11 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}Historial de Auditoría{% endblock %}
-
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/auditoria.css' %}">
 {% endblock %}
-
 {% block content %}
 <div class="dashboard-container">
     <!-- Header con información del sistema -->
@@ -18,7 +16,6 @@
             <p>Usted NO tiene acceso a datos clínicos de pacientes según Ley 20.584. Solo visualiza eventos de auditoría y gestión de usuarios.</p>
         </div>
     </div>
-
     <!-- Estadísticas -->
     <div class="stats-grid" style="margin-bottom: 24px;">
         <div class="stat-card">
@@ -34,7 +31,6 @@
                 </svg>
             </div>
         </div>
-
         <div class="stat-card">
             <div class="stat-content">
                 <h3>Usuarios Activos</h3>
@@ -50,7 +46,6 @@
                 </svg>
             </div>
         </div>
-
         <div class="stat-card">
             <div class="stat-content">
                 <h3>Eventos Hoy</h3>
@@ -66,7 +61,6 @@
                 </svg>
             </div>
         </div>
-
         <div class="stat-card">
             <div class="stat-content">
                 <h3>Tipos de Acciones</h3>
@@ -80,7 +74,6 @@
             </div>
         </div>
     </div>
-
     <!-- Filtros -->
     <div class="card" style="margin-bottom: 24px;">
         <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
@@ -99,7 +92,6 @@
                            placeholder="Usuario, acción, IP..."
                            value="{{ busqueda }}">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Acción</label>
                     <select name="accion" class="form-select">
@@ -111,7 +103,6 @@
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Usuario</label>
                     <select name="usuario" class="form-select">
@@ -124,7 +115,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="form-grid" style="grid-template-columns: 1fr 1fr 2fr; margin-top: 12px;">
                 <div class="form-group">
                     <label class="form-label">Fecha Desde</label>
@@ -133,7 +123,6 @@
                            class="form-input"
                            value="{{ fecha_desde }}">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Fecha Hasta</label>
                     <input type="date" 
@@ -141,7 +130,6 @@
                            class="form-input"
                            value="{{ fecha_hasta }}">
                 </div>
-
                 <div class="form-group" style="display: flex; align-items: flex-end; gap: 12px;">
                     <button type="submit" class="btn btn-primary" style="flex: 1;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -171,7 +159,6 @@
             </div>
         </form>
     </div>
-
     <!-- Tabla de Auditoría -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -185,7 +172,6 @@
                 Mostrando {{ total_filtrados }} de {{ total_eventos }} eventos
             </span>
         </div>
-
         {% if logs %}
         <div class="table-container">
             <table class="table">
@@ -267,8 +253,35 @@
             <p style="font-size: 14px; margin-top: 8px;">Intente modificar los criterios de búsqueda</p>
         </div>
         {% endif %}
+        {# Botones de paginación dinámica #}
+        {% if logs %}
+        <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 16px;">
+            {% if limit > 10 %}
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'limit' %}{{ key }}={{ value }}&{% endif %}{% endfor %}limit=10" 
+               class="btn btn-secondary" 
+               style="min-width: 140px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                Mostrar Menos
+            </a>
+            {% endif %}
+            <span style="font-size: 14px; color: var(--gray-600); font-weight: 500;">
+                Mostrando {{ logs|length }} de {{ total_filtrados }} registros
+            </span>
+            {% if limit < total_filtrados and limit < 500 %}
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'limit' %}{{ key }}={{ value }}&{% endif %}{% endfor %}limit={{ limit|add:10 }}" 
+               class="btn btn-primary" 
+               style="min-width: 140px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                Mostrar Más
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
-
     <!-- Acciones más frecuentes -->
     {% if acciones_frecuentes %}
     <div class="card" style="margin-top: 24px;">
@@ -325,7 +338,6 @@
         </div>
     </div>
     {% endif %}
-
     <!-- Información Legal -->
     <div class="card" style="margin-top: 24px; background: #fef3c7; border-left: 4px solid #f59e0b;">
         <div style="display: flex; align-items: start; gap: 12px;">

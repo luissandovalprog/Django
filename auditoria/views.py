@@ -88,9 +88,16 @@ def historial_auditoria(request):
     # Ordenar por fecha descendente
     logs = logs.order_by('-fecha_accion')
 
-    # Limitar a 500 registros por rendimiento
+    # Paginación dinámica
     total_filtrados = logs.count()
-    logs = logs[:500]
+    try:
+        limit = int(request.GET.get('limit', 10))  # Por defecto 10 registros
+        limit = min(limit, 500)  # Máximo 500 por rendimiento
+        limit = max(limit, 10)   # Mínimo 10
+    except (ValueError, TypeError):
+        limit = 10
+    
+    logs = logs[:limit]
 
     # Descifrar detalles para mostrar
     for log in logs:
@@ -136,6 +143,7 @@ def historial_auditoria(request):
         'usuario_filtro': usuario_filtro,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
+        'limit': limit,  # Para la paginación en la plantilla
     }
 
     return render(request, 'auditoria/historial.html', context)
