@@ -187,7 +187,7 @@ def calcular_estadisticas_rem_bs22(partos):
 @login_required
 def exportar_excel(request):
     """
-    Exporta datos de partos a formato CSV (compatible con Excel)
+    Exporta datos de partos a formato Excel con diseño profesional usando openpyxl
     """
     if not request.user.puede_generar_reportes:
         messages.error(request, 'No tienes permiso para exportar datos')
@@ -212,50 +212,117 @@ def exportar_excel(request):
         partos = Parto.objects.filter(
             fecha_parto__gte=fecha_inicio_dt,
             fecha_parto__lte=fecha_fin_dt
-        ).select_related('madre').prefetch_related('recien_nacidos')
+        ).select_related('madre', 'usuario_registro').prefetch_related('recien_nacidos')
         
-        # Crear respuesta CSV
-        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-        response['Content-Disposition'] = f'attachment; filename="partos_{fecha_inicio_dt.strftime("%Y%m%d")}_{fecha_fin_dt.strftime("%Y%m%d")}.csv"'
+        # Crear workbook de openpyxl
+        from openpyxl import Workbook
+        from io import BytesIO
+        from utils.excel_styles import aplicar_estilo_completo
         
-        # Escribir BOM para Excel UTF-8
-        response.write('\ufeff')
-        
-        writer = csv.writer(response)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Partos y Recién Nacidos"
         
         # Encabezados
-        writer.writerow([
+        headers = [
             'Fecha Parto',
-            'Ficha Madre',
-            'Edad Gestacional',
+            'Hora Parto',
+            'Ficha Clínica Madre',
+            'RUT Madre',
+            'Nombre Madre',
+            'Edad Gestacional (sem)',
             'Tipo Parto',
             'Anestesia',
-            'RN Estado',
-            'RN Sexo',
-            'RN Peso (g)',
-            'RN Talla (cm)',
+            'RUT/ID Recién Nacido',
+            'Estado al Nacer',
+            'Sexo RN',
+            'Peso (g)',
+            'Talla (cm)',
             'APGAR 1min',
             'APGAR 5min',
             'Usuario Registro'
-        ])
+        ]
+        
+        ws.append(headers)
         
         # Datos
+        row_count = 1  # Empezamos en 1 por el header
         for parto in partos:
-            for rn in parto.recien_nacidos.all():
-                writer.writerow([
-                    parto.fecha_parto.strftime('%d/%m/%Y %H:%M'),
-                    parto.madre.ficha_clinica_numero or '',
+            madre = parto.madre
+            # CORRECCIÓN: Usar métodos get_rut() y get_nombre() del modelo encriptado
+            madre_rut = madre.get_rut() or ''
+            madre_nombre = madre.get_nombre() or ''
+            
+            recien_nacidos = parto.recien_nacidos.all()
+            
+            if recien_nacidos.exists():
+                for rn in recien_nacidos:
+                    ws.append([
+                        parto.fecha_parto.strftime('%d/%m/%Y'),
+                        parto.fecha_parto.strftime('%H:%M'),
+                        madre.ficha_clinica_numero or '',
+                        madre_rut,
+                        madre_nombre,
+                        parto.edad_gestacional or '',
+                        parto.tipo_parto or '',
+                        parto.anestesia or '',
+                        rn.rut_provisorio or str(rn.id),
+                        rn.estado_al_nacer or '',
+                        rn.sexo or '',
+                        rn.peso_gramos or '',
+                        rn.talla_cm or '',
+                        rn.apgar_1_min if rn.apgar_1_min is not None else '',
+                        rn.apgar_5_min if rn.apgar_5_min is not None else '',
+                        parto.usuario_registro.username
+                    ])
+                    row_count += 1
+            else:
+                # Si no hay recién nacidos, agregar fila solo con datos del parto
+                ws.append([
+                    parto.fecha_parto.strftime('%d/%m/%Y'),
+                    parto.fecha_parto.strftime('%H:%M'),
+                    madre.ficha_clinica_numero or '',
+                    madre_rut,
+                    madre_nombre,
                     parto.edad_gestacional or '',
-                    parto.tipo_parto,
+                    parto.tipo_parto or '',
                     parto.anestesia or '',
-                    rn.estado_al_nacer,
-                    rn.sexo or '',
-                    rn.peso_gramos or '',
-                    rn.talla_cm or '',
-                    rn.apgar_1_min or '',
-                    rn.apgar_5_min or '',
+                    '',  # RUT RN
+                    '',  # Estado RN
+                    '',  # Sexo RN
+                    '',  # Peso
+                    '',  # Talla
+                    '',  # APGAR 1
+                    '',  # APGAR 5
                     parto.usuario_registro.username
                 ])
+                row_count += 1
+        
+        # Aplicar estilos profesionales
+        max_col = len(headers)
+        
+        # Columnas a centrar: Fecha, Hora, Edad Gest., Sexo, APGAR 1min, APGAR 5min
+        columnas_centradas = [1, 2, 6, 11, 14, 15]
+        
+        # Columnas numéricas con formato: Peso, Talla
+        columnas_numericas = {
+            12: '#,##0',  # Peso
+            13: '0.0'     # Talla
+        }
+        
+        aplicar_estilo_completo(
+            wb, 
+            ws, 
+            row_count, 
+            max_col,
+            columnas_centradas=columnas_centradas,
+            columnas_numericas=columnas_numericas
+        )
+        
+        # Guardar en memoria
+        excel_file = BytesIO()
+        wb.save(excel_file)
+        excel_file.seek(0)
         
         # Registrar exportación
         LogAuditoria.registrar(
@@ -264,6 +331,14 @@ def exportar_excel(request):
             detalles=f'Exportados {partos.count()} partos del periodo {fecha_inicio_dt.date()} a {fecha_fin_dt.date()}',
             ip=get_client_ip(request)
         )
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(
+            excel_file.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        nombre_archivo = f'partos_{fecha_inicio_dt.strftime("%Y%m%d")}_{fecha_fin_dt.strftime("%Y%m%d")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
         
         return response
     
