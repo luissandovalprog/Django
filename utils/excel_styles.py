@@ -66,7 +66,9 @@ def ajustar_ancho_columnas(ws, max_col, min_width=10, max_width=50):
                     cell_length = len(str(cell.value))
                     if cell_length > max_length:
                         max_length = cell_length
-            except:
+            except Exception:
+                # Ignoramos errores de cálculo de ancho para no detener la generación del reporte
+                # pero es explícito que atrapamos Exception
                 pass
         
         # Ajustar ancho con límites

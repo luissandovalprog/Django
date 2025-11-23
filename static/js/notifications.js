@@ -18,7 +18,7 @@ class NotificationSystem {
 
     // Configuración
     this.config = {
-      pollingInterval: 60000, // 60 segundos
+      pollingInterval: 300000, // 60 segundos
       maxNotifications: 10,
       apiUrls: {
         count: "/notifications/api/conteo/",

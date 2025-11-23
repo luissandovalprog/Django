@@ -16,7 +16,7 @@ from auditoria.models import LogAuditoria
 from utils.crypto import crypto_service
 from django.http import HttpResponse
 from django.contrib.contenttypes.models import ContentType
-import json
+import json, logging
 from django.http import JsonResponse
 
 def get_client_ip(request):
@@ -124,7 +124,7 @@ def dashboard(request):
 
         # Obtener madres con límite y búsqueda
 
-        madres_qs = Madre.objects.all().order_by('-fecha_registro')
+        madres_qs = Madre.objects.only('rut_encrypted', 'nombre_encrypted', 'ficha_clinica_numero').order_by('-fecha_registro')
 
         
 
@@ -168,9 +168,12 @@ def dashboard(request):
         })
     
     return render(request, 'core/dashboard.html', context)
-
-
-# ============= VISTA HTMX PARA TABLA DE MADRES =============
+
+
+
+
+# ============= VISTA HTMX PARA TABLA DE MADRES =============
+
 
 @login_required
 def madres_table_htmx(request):
@@ -186,7 +189,7 @@ def madres_table_htmx(request):
     busqueda_query = request.GET.get('busqueda', '')
     
     # Obtener madres con límite y búsqueda
-    madres_qs = Madre.objects.all().order_by('-fecha_registro')
+    madres_qs = Madre.objects.only('rut_encrypted', 'nombre_encrypted', 'ficha_clinica_numero').order_by('-fecha_registro')
     
     if busqueda_query:
         search_hash = crypto_service.hash_data(busqueda_query)
@@ -989,13 +992,14 @@ def partograma_update(request, parto_pk):
             from datetime import datetime as dt
             partograma = parto.partograma_data
             
+            logger = logging.getLogger(__name__)
             # Convertir hora_inicio de string a objeto time
             if partograma.get('hora_inicio'):
                 try:
                     hora = dt.strptime(partograma['hora_inicio'], '%H:%M').time()
                     initial_data['hora_inicio'] = hora
-                except:
-                    pass
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Error al parsear hora inicio en partograma: {e}")
             
             initial_data['dilatacion_cm'] = partograma.get('dilatacion_cm', '')
             initial_data['fcf_latidos'] = partograma.get('fcf_latidos', '')

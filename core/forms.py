@@ -540,6 +540,15 @@ class EpicrisisForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         required=False
     )
+    
+    # NUEVO: Campo para diagnósticos CIE-10
+    diagnosticos_cie10 = forms.ModelMultipleChoiceField(
+        queryset=DiagnosticoCIE10.objects.all().order_by('codigo'),
+        required=False,
+        label='Diagnósticos CIE-10',
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Seleccione uno o más diagnósticos aplicables al egreso'
+    )
 
 
 class IndicacionForm(forms.ModelForm):
