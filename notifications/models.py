@@ -123,7 +123,7 @@ class Notificacion(models.Model):
             mensaje = (
                 f"El Dr(a). {correccion.usuario.nombre_completo} ha anexado una corrección en {descripcion}.\n\n"
                 f"📋 Campo Afectado: {correccion.campo_corregido}\n\n"
-                f"🔄 Cambio Realizado:\n"
+                f"🔄 Cambio a Realizar:\n"
                 f"   • Valor anterior: {valor_anterior}\n"
                 f"   • Nuevo valor: {valor_nuevo}\n\n"
                 f"📝 Justificación: {correccion.justificacion}"

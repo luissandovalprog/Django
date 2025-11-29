@@ -1,8 +1,3 @@
-"""
-Formularios CORREGIDOS
-CAMBIO CRÍTICO: Agregado campo 'direccion' a MadreForm
-"""
-
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Madre, Parto, RecienNacido, DiagnosticoCIE10, Correccion, Indicacion
@@ -14,7 +9,6 @@ from django.utils import timezone
 class MadreForm(forms.ModelForm):
     """
     Formulario para crear/editar Madre
-    CORREGIDO: Agregado campo 'direccion' separado de ficha_clinica_id
     """
     
     # Campos no cifrados para el formulario
@@ -387,11 +381,6 @@ class RecienNacidoForm(forms.ModelForm):
 
 
 class CorreccionForm(forms.ModelForm):
-    """
-    Formulario mejorado para anexar correcciones
-    Incluye dropdown dinámico y autocompletado de valor original
-    """
-    
     # Campos permitidos por tipo de modelo
     CAMPO_CHOICES_MADRE = [
         ('', 'Seleccione un campo...'),
@@ -491,7 +480,7 @@ class CorreccionForm(forms.ModelForm):
 
 
 class EpicrisisForm(forms.Form):
-    """Formulario para epicrisis (sin cambios)"""
+    """Formulario para epicrisis"""
     
     motivo_ingreso = forms.CharField(
         label="Motivo de Ingreso", 
@@ -540,19 +529,10 @@ class EpicrisisForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         required=False
     )
-    
-    # NUEVO: Campo para diagnósticos CIE-10
-    diagnosticos_cie10 = forms.ModelMultipleChoiceField(
-        queryset=DiagnosticoCIE10.objects.all().order_by('codigo'),
-        required=False,
-        label='Diagnósticos CIE-10',
-        widget=forms.CheckboxSelectMultiple,
-        help_text='Seleccione uno o más diagnósticos aplicables al egreso'
-    )
 
 
 class IndicacionForm(forms.ModelForm):
-    """Formulario para indicaciones médicas (sin cambios)"""
+    """Formulario para indicaciones médicas"""
     
     class Meta:
         model = Indicacion

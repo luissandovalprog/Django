@@ -1,0 +1,23 @@
+{
+  "name": "proyectointegradodjango",
+  "version": "1.0.0",
+  "description": "waitress-serve --listen=*:8000 --threads=10 config.wsgi:application comando para levantar el servidor igual que python manage.py runserver",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KotoF5/ProyectoIntegradoDJANGO.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KotoF5/ProyectoIntegradoDJANGO/issues"
+  },
+  "homepage": "https://github.com/KotoF5/ProyectoIntegradoDJANGO#readme",
+  "devDependencies": {
+    "cypress": "^15.7.0"
+  }
+}

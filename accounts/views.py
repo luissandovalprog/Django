@@ -203,7 +203,6 @@ def gestion_usuarios(request):
         return redirect('core:dashboard')
     """
     Vista de gestión de usuarios (solo para administradores)
-    Versión mejorada con estadísticas
     """
     usuarios = Usuario.objects.select_related('rol').all().order_by('nombre_completo')
     

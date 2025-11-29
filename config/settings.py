@@ -1,5 +1,5 @@
 """
-Django settings for Hospital Clínico Herminda Martín
+Django settings para Hospital Clínico Herminda Martín
 Sistema de Trazabilidad e Información de Partos y Recién Nacidos
 """
 
@@ -84,11 +84,6 @@ DATABASES = {
     }
 }
 
-# MongoDB Configuration
-MONGODB_SETTINGS = {
-    'uri': os.getenv('MONGO_URI', 'mongodb://localhost:27017/'),
-    'db': os.getenv('MONGO_DB', 'hospital_documentos'),
-}
 
 # Password validation con Argon2
 AUTH_PASSWORD_VALIDATORS = [

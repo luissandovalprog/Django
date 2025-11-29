@@ -56,11 +56,19 @@ def dashboard(request):
 
         # Búsqueda
         if busqueda_query:
+            search_hash = crypto_service.hash_data(busqueda_query)
             partos_qs = partos_qs.filter(
-                Q(madre__rut_hash=crypto_service.hash_data(busqueda_query)) |
-                Q(madre__nombre_hash=crypto_service.hash_data(busqueda_query)) |
+                Q(madre__rut_hash=search_hash) |
+                Q(madre__nombre_hash=search_hash) |
                 Q(madre__ficha_clinica_numero__icontains=busqueda_query) |
                 Q(recien_nacidos__rut_provisorio__icontains=busqueda_query)
+            ).distinct()
+
+            # 2. Filtrar Madres (ESTO ES LO QUE FALTA O ESTÁ FALLANDO)
+            madres_qs = madres_qs.filter(
+                Q(rut_hash=search_hash) |
+                Q(nombre_hash=search_hash) |
+                Q(ficha_clinica_numero__icontains=busqueda_query)
             ).distinct()
 
         # Estadísticas clínicas
@@ -382,9 +390,12 @@ def parto_update(request, pk):
     else:
         form = PartoForm(instance=parto, user=request.user)
     
+    # Descifrar datos de la madre para mostrar en el template
+    parto.madre.nombre_descifrado = parto.madre.get_nombre()
+    parto.madre.rut_descifrado = parto.madre.get_rut()
+    
     context = {'form': form, 'title': 'Editar Parto', 'parto': parto}
     return render(request, 'core/parto_form.html', context)
-
 
 @login_required
 def parto_detail(request, pk):
@@ -746,7 +757,6 @@ def registrar_parto_para_madre(request, madre_pk):
 def registrar_parto_completo(request, madre_pk):
     """
     Registrar parto y recién nacido en una sola vista
-    VERSIÓN FINAL - Corrige el problema de usuario_registro
     """
     madre = get_object_or_404(Madre, pk=madre_pk)
     
@@ -895,7 +905,7 @@ def partograma_list(request):
 
 @login_required
 def partograma_create(request, parto_pk):
-    """Crear partograma - SOLO Matrona/Enfermera"""
+    """Crear partograma - SOLO Matrona"""
     parto = get_object_or_404(Parto, pk=parto_pk)
     
     if not request.user.puede_crear_editar_partograma:

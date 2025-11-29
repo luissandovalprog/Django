@@ -108,7 +108,7 @@
         <div class="card">
             <h2 class="card-header">Recién Nacidos Hospitalizados</h2>
 
-        {% cache 60 tabla_dashboard request.user.id busqueda_query %}
+        <!--{% cache 60 tabla_dashboard request.user.id busqueda_query %}-->
 
             {% if not ultimos_partos %}
                 <p style="text-align: center; color: var(--gray-500); padding: 40px 0;">
@@ -197,7 +197,7 @@
                 </table>
             </div> 
             {% endif %}
-            {% endcache %}
+            <!--{% endcache %}-->
         </div>
     {% endif %}
 
@@ -211,7 +211,7 @@
     </p>
     {% else %}
 
-    {% cache 60 tabla_dashboard request.user.id %}
+    <!--{% cache 60 tabla_dashboard request.user.id %}-->
     <div class="table-container">
         <table class="table">
             <thead>
@@ -282,7 +282,7 @@
             </tbody>
         </table>
     </div>
-    {% endcache %}
+    <!--{% endcache %}-->
     {% endif %}
 </div>
 {% endif %}

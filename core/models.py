@@ -1,9 +1,5 @@
 """
-Modelos corregidos - Sistema de trazabilidad
-CAMBIOS CRÍTICOS:
-1. Agregado campo 'direccion' a Madre
-2. Corregido manejo de epicrisis_data
-3. Mejorada validación de correcciones
+Sistema de trazabilidad
 """
 
 from django.db import models
@@ -16,7 +12,6 @@ from django.contrib.contenttypes.models import ContentType
 class Madre(models.Model):
     """
     Modelo de Madre con datos sensibles cifrados
-    ACTUALIZADO: Campo usuario_registro agregado
     """
     PREVISION_CHOICES = [
         ('FONASA', 'FONASA'),
@@ -122,7 +117,6 @@ class DiagnosticoCIE10(models.Model):
 class Parto(models.Model):
     """
     Modelo de Parto con datos clínicos
-    CORREGIDO: Validación de epicrisis_data
     """
     TIPO_PARTO_CHOICES = [
         ('Eutócico', 'Eutócico'),
@@ -193,7 +187,7 @@ class PartoDiagnostico(models.Model):
 
 
 class RecienNacido(models.Model):
-    """Modelo de Recién Nacido (sin cambios necesarios)"""
+    """Modelo de Recién Nacido"""
     ESTADO_CHOICES = [
         ('Vivo', 'Vivo'),
         ('Nacido Muerto', 'Nacido Muerto'),
@@ -317,7 +311,7 @@ class Indicacion(models.Model):
 
 
 class Defuncion(models.Model):
-    """Modelo de Defunción (sin cambios necesarios)"""
+    """Modelo de Defunción"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     recien_nacido = models.OneToOneField(
         RecienNacido,
@@ -362,7 +356,7 @@ class Defuncion(models.Model):
 
 
 class DocumentoReferencia(models.Model):
-    """Modelo para referenciar documentos en MongoDB"""
+    """Modelo para referenciar documentos"""
     TIPO_DOCUMENTO_CHOICES = [
         ('EPICRISIS_PDF', 'Epicrisis PDF'),
         ('REPORTE_EXCEL', 'Reporte Excel'),

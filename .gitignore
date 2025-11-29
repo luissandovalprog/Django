@@ -41,6 +41,7 @@ staticfiles/
 
 # IDE
 .vscode/
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -59,3 +60,4 @@ logs/
 # MongoDB
 data/
 mongod.lock
+node_modules

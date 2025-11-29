@@ -94,38 +94,6 @@
                         </p>
                     {% endif %}
                 </div>
-                
-                <!-- NUEVO: Selector de Diagnósticos CIE-10 -->
-                <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
-                    <label class="form-label">Diagnósticos CIE-10</label>
-                    <p class="form-hint" style="margin-bottom: 12px;">
-                        Seleccione uno o más diagnósticos codificados CIE-10 aplicables al egreso
-                    </p>
-                    
-                    <!-- Lista de diagnósticos con checkboxes -->
-                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--gray-300); border-radius: 6px; padding: 12px; background: #f9fafb;">
-                        {% for diagnostico in form.diagnosticos_cie10.field.queryset %}
-                        <div class="diagnostico-item">
-                            <label style="display: flex; align-items: start; padding: 8px; margin-bottom: 4px; cursor: pointer; border-radius: 4px; transition: background 0.2s;" 
-                                   onmouseover="this.style.background='#e5e7eb'" 
-                                   onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" 
-                                       name="{{ form.diagnosticos_cie10.name }}" 
-                                       value="{{ diagnostico.pk }}"
-                                       style="margin-right: 10px; margin-top: 4px;"
-                                       {% if diagnostico in form.diagnosticos_cie10.value %}checked{% endif %}>
-                                <div style="flex: 1;">
-                                    <strong style="color: var(--primary-blue); font-size: 13px;">{{ diagnostico.codigo }}</strong>
-                                    <span style="color: var(--gray-700); font-size: 14px; display: block; margin-top: 2px;">{{ diagnostico.descripcion }}</span>
-                                </div>
-                            </label>
-                        </div>
-                        {% empty %}
-                        <p style="text-align: center; color: var(--gray-500); font-size: 14px;">No hay diagnósticos CIE-10 disponibles</p>
-                        {% endfor %}
-                    </div>
-                </div>
-
 
                 <div class="form-grid">
                     <div class="form-group">

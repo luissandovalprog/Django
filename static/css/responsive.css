@@ -1,0 +1,472 @@
+/* ============================================
+   RESPONSIVE FIXES PARA MÓVILES
+   Archivo: static/css/responsive.css
+   ============================================ */
+
+/* Tablets y pantallas medianas */
+
+.navbar-toggle {
+    display: none !important;
+}
+
+@media (max-width: 1024px) {
+    .navbar-menu {
+        display: none;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+
+    /* ==================== NAVBAR RESPONSIVE ==================== */
+    .navbar-container {
+        position: relative;
+        flex-direction: row;
+        padding: 12px 16px;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 0 1 auto;
+    }
+
+    /* BOTÓN HAMBURGUESA - SOLO EN MÓVIL */
+    .navbar-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: white;
+        font-size: 24px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .navbar-toggle:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .navbar-toggle.active {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* LOGO COMPACTO */
+    .navbar-brand {
+        justify-content: flex-start;
+        flex-shrink: 0;
+    }
+
+    .brand-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .brand-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .brand-text h1 {
+        font-size: 12px;
+    }
+
+    .brand-text p {
+        display: none;
+    }
+
+    /* MENÚ DESPLEGABLE */
+    .navbar-menu {
+        position: fixed !important;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--primary-blue);
+        flex-direction: column !important;
+        padding: 16px;
+        display: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        z-index: 999;
+    }
+
+    .navbar-menu.active {
+        display: flex !important;
+        max-height: 500px;
+    }
+
+    .nav-link {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 4px;
+    }
+
+    /* BOTONES DE LA DERECHA */
+    .navbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .notifications-wrapper {
+        display: block !important;
+    }
+
+    .notifications-bell {
+        width: 36px;
+        height: 36px;
+    }
+
+    .btn-logout {
+        padding: 8px 12px;
+        font-size: 0;
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+    }
+
+    .btn-logout svg {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+    }
+
+    /* Ocultar texto del botón logout, solo mostrar icono */
+    .btn-logout span {
+        display: none;
+    }
+
+    /* ==================== MAIN CONTENT ==================== */
+    .main-content {
+        padding: 16px;
+        padding-top: 80px;
+        /* Espacio para navbar fijo */
+    }
+
+    /* CARDS */
+    .card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .card-header {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+
+    /* STATS GRID - UNA COLUMNA EN MÓVIL */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-content h3 {
+        font-size: 13px;
+    }
+
+    .stat-content p {
+        font-size: 24px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    /* FORMS - UNA COLUMNA EN MÓVIL */
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+    }
+
+    .form-label {
+        font-size: 13px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    /* BUTTONS */
+    .btn-group {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* TABLES - SCROLL HORIZONTAL */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
+
+    .table {
+        min-width: 800px;
+        font-size: 12px;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 8px;
+        white-space: nowrap;
+    }
+
+    .table th {
+        font-size: 11px;
+    }
+
+    /* ACTION BUTTONS EN TABLAS */
+    .action-buttons {
+        display: flex;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .btn-icon svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* BADGES */
+    .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    /* SEARCH BAR */
+    .search-container {
+        margin-bottom: 16px;
+    }
+
+    .search-input {
+        font-size: 14px;
+        padding: 10px 10px 10px 40px;
+    }
+
+    /* MESSAGES */
+    .messages-container {
+        top: 70px;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+    }
+
+    .message {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    /* ALERTS */
+    .alert {
+        padding: 12px;
+        font-size: 13px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* NOTIFICATIONS DROPDOWN */
+    .notifications-dropdown {
+        width: calc(100vw - 32px);
+        right: -8px;
+        max-height: 400px;
+    }
+
+    .notification-message {
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+    }
+
+    /* DASHBOARD ESPECÍFICO */
+    .dashboard-container {
+        padding: 0;
+    }
+
+    /* FORMULARIOS LARGOS */
+    .form-container {
+        padding: 0;
+    }
+
+    .export-date-grid,
+    .date-inputs-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .export-features-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .date-input-group input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    /* TABLAS EN AUDITORÍA */
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 4px;
+    }
+
+    .info-value {
+        text-align: left !important;
+    }
+}
+
+/* Móviles pequeños (< 400px) */
+@media (max-width: 400px) {
+    .main-content {
+        padding: 12px;
+        padding-top: 80px;
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .card-header {
+        font-size: 16px;
+    }
+
+    .stat-content p {
+        font-size: 20px;
+    }
+
+    .table {
+        min-width: 700px;
+        font-size: 11px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+    }
+
+    .brand-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .brand-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* HORIZONTAL SCROLL INDICATOR PARA TABLAS */
+@media (max-width: 768px) {
+    .table-container::after {
+        content: '← Desliza para ver más →';
+        display: block;
+        text-align: center;
+        font-size: 11px;
+        color: var(--gray-500);
+        padding: 8px;
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .table-container::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+        background: var(--gray-100);
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: 2px;
+    }
+}
+
+/* FIX PARA REPORTES */
+@media (max-width: 768px) {
+    .reports-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .report-card {
+        padding: 24px;
+    }
+
+    .report-icon-wrapper {
+        width: 64px;
+        height: 64px;
+    }
+
+    .report-content h3 {
+        font-size: 20px;
+    }
+
+    .report-content p {
+        min-height: auto;
+    }
+}
+
+/* FIX PARA EPICRISIS Y PARTOGRAMAS */
+@media (max-width: 768px) {
+
+    .export-main-card,
+    .form-main-card {
+        padding: 20px;
+    }
+
+    .export-info-banner,
+    .info-banner {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .export-actions,
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .export-actions .btn,
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

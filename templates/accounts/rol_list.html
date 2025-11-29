@@ -119,28 +119,5 @@
         </div>
         {% endif %}
     </div>
-
-    <!-- Información de seguridad -->
-    <div class="card" style="margin-top: 24px; background: #dbeafe; border-left: 4px solid var(--primary-blue);">
-        <div style="display: flex; align-items: start; gap: 12px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-            <div>
-                <p style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
-                    Principios RBAC del Sistema
-                </p>
-                <ul style="font-size: 14px; color: #1e40af; list-style: disc; margin-left: 20px; line-height: 1.8;">
-                    <li><strong>Segregación de Funciones:</strong> Cada rol tiene permisos específicos sin superposición innecesaria</li>
-                    <li><strong>Principio del Menor Privilegio:</strong> Los usuarios solo acceden a lo estrictamente necesario</li>
-                    <li><strong>Segmentación de Datos:</strong> Admin Sistema no ve datos clínicos, Administrativo no ve datos médicos</li>
-                    <li><strong>Trazabilidad Total:</strong> Todos los cambios en roles quedan registrados en auditoría</li>
-                    <li><strong>Cumplimiento Normativo:</strong> Diseñado según Ley 20.584 y estándares de seguridad hospitalaria</li>
-                </ul>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
