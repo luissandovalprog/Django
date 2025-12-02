@@ -26,4 +26,8 @@ urlpatterns = [
     
     # API JSON para gráficos
     path('api/estadisticas/', views.api_estadisticas_json, name='api_estadisticas'),
+
+
+
+    path('debug-ip/', debug_headers_view, name='debug_ip'),
 ]
