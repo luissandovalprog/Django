@@ -5,6 +5,7 @@ URLs de la aplicación auditoría
 
 from django.urls import path
 from . import views
+from .debug_ip_view import debug_headers_view
 
 app_name = 'auditoria'
 
