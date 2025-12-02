@@ -14,6 +14,7 @@ import csv
 from accounts.views import get_client_ip
 
 
+
 @login_required
 def reporte_menu(request):
     """

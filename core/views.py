@@ -18,15 +18,27 @@ from django.http import HttpResponse
 from django.contrib.contenttypes.models import ContentType
 import json, logging
 from django.http import JsonResponse
+from ipware import get_client_ip
 
 def get_client_ip(request):
-    """Obtiene la IP del cliente"""
+    """Obtiene la IP real del cliente (soporta Cloudflare en Render)"""
+    # Prioridad 1: Cloudflare (usado por Render)
+    ip = request.META.get('HTTP_CF_CONNECTING_IP')
+    if ip:
+        return ip.strip()
+    
+    # Prioridad 2: Backup de Cloudflare
+    ip = request.META.get('HTTP_TRUE_CLIENT_IP')
+    if ip:
+        return ip.strip()
+    
+    # Prioridad 3: Header estándar
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+        return x_forwarded_for.split(',')[0].strip()
+    
+    # Última opción: IP directa (siempre será interna en Render)
+    return request.META.get('REMOTE_ADDR', 'Desconocida')
 
 
 @login_required

@@ -206,3 +206,15 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+
+IPWARE_META_PRECEDENCE_ORDER = (
+    'HTTP_CF_CONNECTING_IP',      # Cloudflare envía la IP real aquí (prioridad 1)
+    'HTTP_TRUE_CLIENT_IP',        # Backup de Cloudflare
+    'HTTP_X_FORWARDED_FOR',       # Fallback estándar
+    'HTTP_X_REAL_IP',             # Otro fallback común
+    'REMOTE_ADDR',                # Última opción (siempre será IP interna en Render)
+)
+
+IPWARE_PROXY_COUNT = 2
+IPWARE_PROXY_ORDER = 'left-most'
