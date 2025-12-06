@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión 2FA{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <h2>Gestión 2FA</h2>
+            <p>Administra tu seguridad</p>
+        </div>
+        
+        <div class="auth-body">
+            <div class="info-box {% if tiene_2fa_activo %}success-box{% else %}info-box-default{% endif %}">
+                <div class="info-icon">
+                    {% if tiene_2fa_activo %}✅{% else %}ℹ️{% endif %}
+                </div>
+                <div class="info-content">
+                    {% if tiene_2fa_activo %}
+                        <strong>2FA Activado</strong>
+                        <p>Tu cuenta está protegida.</p>
+                        {% if codigos_disponibles > 0 %}
+                            <p class="codes-count">Tienes <strong>{{ codigos_disponibles }}</strong> códigos de recuperación disponibles.</p>
+                        {% else %}
+                            <p class="codes-warning">⚠️ No tienes códigos de recuperación. Genera nuevos ahora.</p>
+                        {% endif %}
+                    {% else %}
+                        <strong>2FA NO Activado</strong>
+                        <p>Protege tu cuenta activando la autenticación de dos factores.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="options-grid">
+                {% if not tiene_2fa_activo or not tiene_dispositivo %}
+                <!-- Configurar 2FA -->
+                <a href="{% url 'accounts:configurar_2fa' %}" class="option-card">
+                    <div class="option-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="M9 11l3 3L22 4"/>
+                        </svg>
+                    </div>
+                    <h3>Configurar 2FA</h3>
+                    <p>Activa la autenticación de dos factores</p>
+                </a>
+                {% endif %}
+
+                {% if tiene_2fa_activo %}
+                <!-- Ver Códigos de Recuperación -->
+                <a href="{% url 'accounts:ver_codigos_recuperacion' %}" class="option-card">
+                    <div class="option-icon" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                    </div>
+                    <h3>Ver Códigos</h3>
+                    <p>Consulta tus códigos de respaldo</p>
+                </a>
+
+                <!-- Regenerar Códigos -->
+                <a href="{% url 'accounts:regenerar_codigos_recuperacion' %}" class="option-card">
+                    <div class="option-icon" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </div>
+                    <h3>Regenerar Códigos</h3>
+                    <p>Obtén nuevos códigos de emergencia</p>
+                </a>
+
+                <!-- Desactivar 2FA -->
+                <a href="{% url 'accounts:desactivar_2fa' %}" class="option-card option-card-danger">
+                    <div class="option-icon" style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                    </div>
+                    <h3>Desactivar 2FA</h3>
+                    <p>Deshabilitar seguridad adicional</p>
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="auth-footer">
+                <a href="javascript:history.back()" class="back-link">
+                    ← Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 1px solid #eaeaea;
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px 20px;
+    text-align: center;
+    color: white;
+}
+
+.header-icon {
+    background: rgba(255,255,255,0.2);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.auth-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.auth-header p {
+    margin: 5px 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.auth-body {
+    padding: 40px;
+}
+
+.info-box {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    margin-bottom: 40px;
+    border: 1px solid #e9ecef;
+}
+
+.success-box {
+    background: #f0fff4;
+    border-color: #c6f6d5;
+}
+
+.info-icon {
+    font-size: 24px;
+}
+
+.info-content strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #2d3748;
+}
+
+.info-content p {
+    margin: 0;
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.codes-count {
+    margin-top: 5px !important;
+    color: #2f855a !important;
+}
+
+.codes-warning {
+    margin-top: 5px !important;
+    color: #c53030 !important;
+    font-weight: 600;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.option-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 30px 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    border-color: #667eea;
+}
+
+.option-card-danger:hover {
+    border-color: #f44336;
+    box-shadow: 0 10px 20px rgba(244, 67, 54, 0.1);
+}
+
+.option-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.option-card h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #2d3748;
+}
+
+.option-card p {
+    margin: 0;
+    font-size: 13px;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.auth-footer {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.back-link {
+    color: #718096;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #4a5568;
+}
+
+@media (max-width: 768px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

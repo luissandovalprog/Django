@@ -111,6 +111,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
+    require_2fa = models.BooleanField(default=False, verbose_name='Requiere 2FA', help_text='Si está activado, el usuario debe usar autenticación de dos factores')
     
     objects = UsuarioManager()
     

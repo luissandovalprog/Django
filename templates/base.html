@@ -199,5 +199,75 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+
+    <!-- Botón Flotante de Configuración 2FA -->
+    {% if request.user.is_authenticated %}
+    <a href="{% url 'accounts:menu_2fa' %}" class="fab-2fa" title="Configuración 2FA">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+        </svg>
+    </a>
+
+    <style>
+    .fab-2fa {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        text-decoration: none;
+    }
+
+    .fab-2fa:hover {
+        transform: translateY(-5px) scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        color: white;
+        text-decoration: none;
+    }
+
+    .fab-2fa svg {
+        animation: rotate-slow 4s linear infinite;
+    }
+
+    .fab-2fa:hover svg {
+        animation: rotate-fast 0.6s linear infinite;
+    }
+
+    @keyframes rotate-slow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes rotate-fast {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+        .fab-2fa {
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+        }
+
+        .fab-2fa svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    </style>
+    {% endif %}
 </body>
 </html>

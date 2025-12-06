@@ -8,9 +8,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from auditoria.models import LogAuditoria
 from .models import Usuario, Rol
 from .forms import CustomUsuarioCreationForm, CustomUsuarioChangeForm, RolForm
+
+
 
 def get_client_ip(request):
     """Obtiene la IP real del cliente (soporta Cloudflare en Render)"""
@@ -47,9 +50,30 @@ def login_view(request):
             
             if user is not None:
                 if user.activo:
+                    # ===== VERIFICAR 2FA ANTES DE LOGIN =====
+                    if user.require_2fa:
+                        # Verificar si tiene dispositivo TOTP confirmado
+                        devices = TOTPDevice.objects.filter(user=user, confirmed=True)
+                        if devices.exists():
+                            # NO hacer login todavía - guardar usuario pendiente
+                            request.session['pending_2fa_user_id'] = str(user.id)
+                            request.session['pending_2fa_username'] = user.username
+                            
+                            # Registrar intento de login (sin completar)
+                            LogAuditoria.registrar(
+                                usuario=user,
+                                accion='LOGIN_PENDIENTE_2FA',
+                                detalles=f'Credenciales verificadas, pendiente código 2FA - Rol: {user.rol.nombre if user.rol else "Sin rol"}',
+                                ip=get_client_ip(request)
+                            )
+                            
+                            messages.info(request, 'Ingrese su código de autenticación de dos factores.')
+                            return redirect('accounts:verificar_2fa')
+                    
+                    # ===== LOGIN NORMAL (sin 2FA o sin dispositivo configurado) =====
                     login(request, user)
                     
-                    # Registrar login
+                    # Registrar login exitoso
                     LogAuditoria.registrar(
                         usuario=user,
                         accion='LOGIN',
@@ -58,6 +82,9 @@ def login_view(request):
                     )
                     
                     messages.success(request, f'Bienvenido, {user.nombre_completo}')
+                    
+                    # Marcar sesión como verificada (no requiere 2FA)
+                    request.session['otp_verified'] = True
                     
                     # ===== REDIRECCIÓN POR ROL =====
                     if user.rol and user.rol.nombre == 'Admin Sistema':
@@ -89,6 +116,11 @@ def logout_view(request):
         detalles='Cierre de sesión',
         ip=get_client_ip(request)
     )
+
+    if 'otp_verified' in request.session:
+        del request.session['otp_verified']
+    if 'pending_2fa_user_id' in request.session:
+        del request.session['pending_2fa_user_id']
     
     logout(request)
     messages.info(request, 'Has cerrado sesión exitosamente')

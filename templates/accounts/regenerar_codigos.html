@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Regenerar Códigos de Recuperación{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 60px auto;">
+    <div class="card">
+        <div class="card-header" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white;">
+            <h2 style="margin: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Regenerar Códigos de Recuperación
+            </h2>
+        </div>
+        
+        <div class="card-body" style="padding: 40px 30px;">
+            <div class="alert alert-warning" style="margin-bottom: 30px;">
+                <strong>⚠️ Advertencia Importante</strong><br>
+                Al regenerar los códigos de recuperación, todos los códigos anteriores dejarán de funcionar inmediatamente.
+            </div>
+
+            <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
+                <h4 style="color: #e65100; margin-top: 0;">Qué sucederá:</h4>
+                <ul style="color: #e65100; margin: 10px 0; padding-left: 20px;">
+                    <li>Se generarán 10 códigos nuevos</li>
+                    <li>Todos los códigos anteriores se invalidarán</li>
+                    <li>Deberá guardar los nuevos códigos de forma segura</li>
+                    <li>Esta acción quedará registrada en auditoría</li>
+                </ul>
+            </div>
+
+            <form method="post" onsubmit="return confirm('¿Está seguro que desea regenerar los códigos? Los códigos actuales dejarán de funcionar.');">
+                {% csrf_token %}
+                
+                <div class="form-group" style="margin-bottom: 30px;">
+                    <label for="password" style="font-weight: 600; margin-bottom: 10px; display: block;">
+                        Ingrese su contraseña para confirmar
+                    </label>
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-input" 
+                           placeholder="••••••••" 
+                           required
+                           autofocus
+                           style="font-size: 18px;">
+                    <small style="color: #666; display: block; margin-top: 8px;">
+                        Por seguridad, debe confirmar su identidad antes de regenerar los códigos
+                    </small>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button type="submit" class="btn btn-warning" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                        Regenerar Códigos
+                    </button>
+                    <a href="{% url 'accounts:ver_codigos_recuperacion' %}" class="btn btn-secondary" style="flex: 1;">Cancelar</a>
+                </div>
+            </form>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <h4 style="color: #333; margin-bottom: 10px;">💡 ¿Cuándo regenerar códigos?</h4>
+                <ul style="color: #666; line-height: 1.8;">
+                    <li><strong>Ha usado varios códigos</strong> y le quedan pocos disponibles</li>
+                    <li><strong>Sospecha que alguien</strong> pudo haber visto sus códigos</li>
+                    <li><strong>Perdió su lista</strong> de códigos de recuperación</li>
+                    <li><strong>Como medida preventiva</strong> cada cierto tiempo (recomendado cada 6 meses)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 25px 30px;
+}
+
+.alert {
+    padding: 18px 20px;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.alert-warning {
+    background-color: #fff3e0;
+    border-left-color: #ff9800;
+    color: #e65100;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+}
+
+.btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+</style>
+{% endblock %}

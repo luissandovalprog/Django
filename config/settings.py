@@ -32,6 +32,9 @@ INSTALLED_APPS = [
     # Third party apps
     'crispy_forms',
     'crispy_bootstrap4',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     # Local apps
     'accounts',
     'core',
@@ -47,10 +50,14 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'accounts.middleware.Require2FAMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'auditoria.middleware.AuditLogMiddleware',  # Middleware de auditoría personalizado
 ]
+
+OTP_TOTP_ISSUER = 'Hospital Herminda Martín'
 
 ROOT_URLCONF = 'config.urls'
 
