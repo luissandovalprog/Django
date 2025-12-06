@@ -203,9 +203,9 @@
     <!-- Botón Flotante de Configuración 2FA -->
     {% if request.user.is_authenticated %}
     <a href="{% url 'accounts:menu_2fa' %}" class="fab-2fa" title="Configuración 2FA">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
             <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
         </svg>
     </a>
 
@@ -214,57 +214,56 @@
         position: fixed;
         bottom: 30px;
         right: 30px;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-size: 24px;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4), 
+                    0 0 0 2px rgba(255, 255, 255, 0.2) inset;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         z-index: 1000;
         text-decoration: none;
+        backdrop-filter: blur(5px);
     }
 
     .fab-2fa:hover {
-        transform: translateY(-5px) scale(1.1);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        transform: translateY(-5px) scale(1.1) rotate(15deg);
+        box-shadow: 0 15px 30px rgba(99, 102, 241, 0.5),
+                    0 0 0 4px rgba(255, 255, 255, 0.3) inset;
         color: white;
         text-decoration: none;
     }
 
+    .fab-2fa:active {
+        transform: translateY(0) scale(0.95);
+        box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+    }
+
     .fab-2fa svg {
-        animation: rotate-slow 4s linear infinite;
+        transition: transform 0.5s ease;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
     }
 
     .fab-2fa:hover svg {
-        animation: rotate-fast 0.6s linear infinite;
-    }
-
-    @keyframes rotate-slow {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    @keyframes rotate-fast {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        transform: rotate(180deg);
     }
 
     @media (max-width: 768px) {
         .fab-2fa {
             bottom: 20px;
             right: 20px;
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
         }
 
         .fab-2fa svg {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
         }
     }
     </style>
