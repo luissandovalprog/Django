@@ -401,10 +401,10 @@ def generar_epicrisis_pdf(parto, madre, epicrisis_data):
     def draw_header(canvas, doc):
         canvas.saveState()
         canvas.setFillColor(colors.HexColor('#2563eb'))
-        canvas.rect(0, A4[1] - 35*mm, A4[0], 35*mm, fill=True, stroke=False)
+        canvas.rect(0, A4[1] - 50*mm, A4[0], 50*mm, fill=True, stroke=False)
         canvas.restoreState()
     
-    elements.append(Spacer(1, 5*mm))
+    elements.append(Spacer(1, 2*mm))
     elements.append(Paragraph('HOSPITAL CLÍNICO HERMINDA MARTÍN', header_style))
     elements.append(Paragraph('EPICRISIS DE PARTO E INDICACIONES MÉDICAS', subheader_style))
     elements.append(Paragraph('Servicio de Obstetricia y Ginecología', 
