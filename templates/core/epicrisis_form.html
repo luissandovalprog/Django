@@ -199,18 +199,18 @@
                             <input type="text" id="new-descripcion" class="form-input" placeholder="Ej: Paracetamol">
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
+                        <div id="group-dosis" class="form-group" style="margin-bottom: 12px;">
                             <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Dosis</label>
                             <input type="text" id="new-dosis" class="form-input" placeholder="Ej: 500mg">
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
+                        <div id="group-via" class="form-group" style="margin-bottom: 12px;">
                             <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Vía</label>
                             <input type="text" id="new-via" class="form-input" placeholder="Ej: Oral">
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 12px;">
+                    <div id="group-frecuencia" class="form-group" style="margin-bottom: 12px;">
                         <label class="form-label" style="font-size: 13px; margin-bottom: 4px;">Frecuencia</label>
                         <input type="text" id="new-frecuencia" class="form-input" placeholder="Ej: Cada 8 horas">
                     </div>
@@ -305,6 +305,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const noIndicaciones = document.getElementById('no-indicaciones');
     const totalForms = document.getElementById('id_indicaciones-TOTAL_FORMS');
     
+    // Elementos del formulario
+    const tipoSelect = document.getElementById('new-tipo');
+    const descripcionInput = document.getElementById('new-descripcion');
+    const dosisInput = document.getElementById('new-dosis');
+    const viaInput = document.getElementById('new-via');
+    const frecuenciaInput = document.getElementById('new-frecuencia');
+    
+    const groupDosis = document.getElementById('group-dosis');
+    const groupVia = document.getElementById('group-via');
+    const groupFrecuencia = document.getElementById('group-frecuencia');
+
+    // Función para manejar la visibilidad de campos
+    function updateFormFields() {
+        const tipo = tipoSelect.value;
+        
+        // Resetear visibilidad
+        groupDosis.style.display = 'none';
+        groupVia.style.display = 'none';
+        groupFrecuencia.style.display = 'none';
+        
+        // Resetear placeholders
+        descripcionInput.placeholder = 'Descripción';
+        
+        switch(tipo) {
+            case 'medicamento':
+                groupDosis.style.display = 'block';
+                groupVia.style.display = 'block';
+                groupFrecuencia.style.display = 'block';
+                descripcionInput.placeholder = 'Ej: Paracetamol';
+                break;
+            case 'procedimiento':
+                groupFrecuencia.style.display = 'block';
+                descripcionInput.placeholder = 'Ej: Curación de herida';
+                break;
+            case 'cuidado':
+                groupFrecuencia.style.display = 'block';
+                descripcionInput.placeholder = 'Ej: Control de signos vitales';
+                break;
+            case 'dieta':
+                descripcionInput.placeholder = 'Ej: Régimen liviano';
+                break;
+            case 'reposo':
+                descripcionInput.placeholder = 'Ej: Reposo absoluto';
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Event listener para cambios en el tipo
+    tipoSelect.addEventListener('change', updateFormFields);
+    
+    // Inicializar estado
+    updateFormFields();
+
     // Cargar indicaciones existentes si estamos editando
     const formsetForms = document.querySelectorAll('.formset-form');
     formsetForms.forEach((formDiv) => {
@@ -338,27 +393,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     btnAgregar.addEventListener('click', () => {
-        const tipo = document.getElementById('new-tipo').value;
-        const descripcion = document.getElementById('new-descripcion').value.trim();
-        const dosis = document.getElementById('new-dosis').value.trim();
-        const via = document.getElementById('new-via').value.trim();
-        const frecuencia = document.getElementById('new-frecuencia').value.trim();
+        const tipo = tipoSelect.value;
+        const descripcion = descripcionInput.value.trim();
+        const dosis = dosisInput.value.trim();
+        const via = viaInput.value.trim();
+        const frecuencia = frecuenciaInput.value.trim();
         
         if (!tipo) {
             alert('Debe seleccionar un tipo de indicación');
-            document.getElementById('new-tipo').focus();
+            tipoSelect.focus();
             return;
         }
         
         if (!descripcion) {
             alert('La descripción es obligatoria');
-            document.getElementById('new-descripcion').focus();
+            descripcionInput.focus();
             return;
         }
         
         // Agregar al formset oculto
         const newFormIdx = parseInt(totalForms.value);
-        const tipoText = document.getElementById('new-tipo').options[document.getElementById('new-tipo').selectedIndex].text;
+        const tipoText = tipoSelect.options[tipoSelect.selectedIndex].text;
         
         // Crear campos ocultos para el formset
         const formsetContainer = document.getElementById('formset-container');
@@ -384,14 +439,17 @@ document.addEventListener('DOMContentLoaded', () => {
         indicacionesCount++;
         
         // Limpiar campos
-        document.getElementById('new-tipo').value = '';
-        document.getElementById('new-descripcion').value = '';
-        document.getElementById('new-dosis').value = '';
-        document.getElementById('new-via').value = '';
-        document.getElementById('new-frecuencia').value = '';
+        tipoSelect.value = '';
+        descripcionInput.value = '';
+        dosisInput.value = '';
+        viaInput.value = '';
+        frecuenciaInput.value = '';
+        
+        // Actualizar visibilidad
+        updateFormFields();
         
         // Enfocar el primer campo
-        document.getElementById('new-tipo').focus();
+        tipoSelect.focus();
         
         // Mostrar lista
         indicacionesContainer.style.display = 'block';
